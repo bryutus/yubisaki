@@ -8,9 +8,7 @@ let package = Package(
         .executableTarget(
             name: "Yubisaki",
             path: "Sources/Yubisaki",
-            swiftSettings: [
-                .swiftLanguageMode(.v6)
-            ]
+            swiftSettings: [.swiftLanguageMode(.v6)]
         )
     ]
 )
