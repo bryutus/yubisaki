@@ -8,7 +8,6 @@ extension CGEventType {
 private let kMagnifyEventMask = CGEventMask(1 << CGEventType.magnify.rawValue)
 
 final class GestureMonitor: @unchecked Sendable {
-
     var onGestureDetected: ((GestureType) -> Void)?
 
     private var eventTap: CFMachPort?
@@ -34,6 +33,7 @@ final class GestureMonitor: @unchecked Sendable {
 
         eventTap = tap
         runLoopSource = source
+        print("[GestureMonitor] Event tap created successfully")
     }
 
     func stopMonitoring() {
@@ -69,6 +69,8 @@ final class GestureMonitor: @unchecked Sendable {
             if let gesture = GestureRecognizer.recognize(magnitude: total) {
                 onGestureDetected?(gesture)
             }
+        case .cancelled:
+            accumulatedMagnification = 0
         default:
             break
         }

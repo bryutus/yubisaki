@@ -1,11 +1,12 @@
 import AppKit
 
 @MainActor
-final class MenuBarManager {
+final class MenuBarManager: NSObject {
     private let statusItem: NSStatusItem
 
-    init() {
+    override init() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
+        super.init()
         setupButton()
         setupMenu()
     }
@@ -17,9 +18,16 @@ final class MenuBarManager {
 
     private func setupMenu() {
         let menu = NSMenu()
-        menu.addItem(
-            NSMenuItem(title: "Quit", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
-        )
+        menu.autoenablesItems = false
+        let quitItem = NSMenuItem(title: "Quit", action: #selector(quit), keyEquivalent: "q")
+        quitItem.target = self
+        quitItem.isEnabled = true
+        menu.addItem(quitItem)
         statusItem.menu = menu
+    }
+
+    @objc private func quit() {
+        print("[MenuBarManager] quit() called")
+        NSApplication.shared.terminate(nil)
     }
 }
