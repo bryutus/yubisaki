@@ -27,7 +27,6 @@ final class MenuBarManager: NSObject {
     }
 
     @objc private func quit() {
-        print("[MenuBarManager] quit() called")
         NSApplication.shared.terminate(nil)
     }
 }

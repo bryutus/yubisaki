@@ -33,7 +33,6 @@ final class GestureMonitor: @unchecked Sendable {
 
         eventTap = tap
         runLoopSource = source
-        print("[GestureMonitor] Event tap created successfully")
     }
 
     func stopMonitoring() {

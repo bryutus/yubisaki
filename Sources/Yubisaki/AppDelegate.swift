@@ -28,13 +28,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         gestureMonitor = monitor
     }
 
-    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
-        print("[AppDelegate] applicationShouldTerminate called")
-        return .terminateNow
-    }
-
     func applicationWillTerminate(_ notification: Notification) {
-        print("[AppDelegate] applicationWillTerminate called")
         gestureMonitor?.stopMonitoring()
         appWatcher?.stopWatching()
     }
