@@ -19,11 +19,24 @@ final class MenuBarManager: NSObject {
     private func setupMenu() {
         let menu = NSMenu()
         menu.autoenablesItems = false
+
+        let settingsItem = NSMenuItem(title: "Settings...", action: #selector(openSettings), keyEquivalent: ",")
+        settingsItem.target = self
+        settingsItem.isEnabled = true
+        menu.addItem(settingsItem)
+
+        menu.addItem(.separator())
+
         let quitItem = NSMenuItem(title: "Quit", action: #selector(quit), keyEquivalent: "q")
         quitItem.target = self
         quitItem.isEnabled = true
         menu.addItem(quitItem)
+
         statusItem.menu = menu
+    }
+
+    @objc private func openSettings() {
+        SettingsWindowController.shared.presentSettings()
     }
 
     @objc private func quit() {

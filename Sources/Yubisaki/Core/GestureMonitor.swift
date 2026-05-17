@@ -10,16 +10,21 @@ private let kMagnifyEventMask = CGEventMask(1 << CGEventType.magnify.rawValue)
 
 final class GestureMonitor: @unchecked Sendable {
     var onGestureDetected: ((GestureType) -> Void)?
+    /// Called synchronously from the event tap background thread at gesture start.
+    /// Return true to consume the gesture (suppress native zoom); false to pass through.
+    var shouldHandleGesture: (() -> Bool)?
 
     private var eventTap: CFMachPort?
     private var tapRunLoop: CFRunLoop?
+    // Accessed only from the event tap callback thread.
     private var accumulatedMagnification: Double = 0
+    private var isHandlingCurrentGesture: Bool = false
 
     func startMonitoring() {
         guard let tap = CGEvent.tapCreate(
             tap: .cghidEventTap,
             place: .headInsertEventTap,
-            options: .listenOnly,
+            options: .defaultTap,
             eventsOfInterest: kMagnifyEventMask,
             callback: Self.eventTapCallback,
             userInfo: Unmanaged.passUnretained(self).toOpaque()
@@ -40,7 +45,7 @@ final class GestureMonitor: @unchecked Sendable {
         }
         thread.name = "GestureMonitor"
         thread.start()
-        print("[GestureMonitor] started on background thread (cghidEventTap, listenOnly)")
+        print("[GestureMonitor] started on background thread (cghidEventTap, defaultTap)")
     }
 
     func stopMonitoring() {
@@ -54,41 +59,48 @@ final class GestureMonitor: @unchecked Sendable {
         tapRunLoop = nil
     }
 
-    // CGEvent を @unchecked Sendable でラップしてスレッド間で渡す
-    private struct CGEventWrapper: @unchecked Sendable {
-        let event: CGEvent
-    }
-
     private static let eventTapCallback: CGEventTapCallBack = { _, type, event, userInfo in
         guard let userInfo else { return Unmanaged.passRetained(event) }
         let monitor = Unmanaged<GestureMonitor>.fromOpaque(userInfo).takeUnretainedValue()
-        let wrapper = CGEventWrapper(event: event)
-        DispatchQueue.main.async {
-            guard let nsEvent = NSEvent(cgEvent: wrapper.event) else { return }
-            monitor.handleEvent(nsEvent: nsEvent)
-        }
-        return Unmanaged.passRetained(event)
-    }
 
-    private func handleEvent(nsEvent: NSEvent) {
-        guard nsEvent.type == .magnify else { return }
-        switch nsEvent.phase {
-        case .began:
-            accumulatedMagnification = 0
+        guard let nsEvent = NSEvent(cgEvent: event),
+              nsEvent.type == .magnify else {
+            return Unmanaged.passRetained(event)
+        }
+
+        let phase = nsEvent.phase
+
+        if phase.contains(.began) {
+            monitor.isHandlingCurrentGesture = monitor.shouldHandleGesture?() ?? false
+            monitor.accumulatedMagnification = 0
+        }
+
+        guard monitor.isHandlingCurrentGesture else {
+            return Unmanaged.passRetained(event)
+        }
+
+        let mag = nsEvent.magnification
+        switch phase {
         case .changed:
-            accumulatedMagnification += nsEvent.magnification
+            monitor.accumulatedMagnification += mag
         case .ended:
-            accumulatedMagnification += nsEvent.magnification
-            let total = accumulatedMagnification
-            accumulatedMagnification = 0
+            monitor.accumulatedMagnification += mag
+            let total = monitor.accumulatedMagnification
+            monitor.accumulatedMagnification = 0
+            monitor.isHandlingCurrentGesture = false
             if let gesture = GestureRecognizer.recognize(magnitude: total) {
-                onGestureDetected?(gesture)
+                DispatchQueue.main.async {
+                    monitor.onGestureDetected?(gesture)
+                }
             }
         case .cancelled:
-            accumulatedMagnification = 0
+            monitor.accumulatedMagnification = 0
+            monitor.isHandlingCurrentGesture = false
         default:
             break
         }
+
+        return nil  // consume event
     }
 
     deinit {

@@ -16,8 +16,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         appWatcher = watcher
 
         let monitor = GestureMonitor()
-        monitor.onGestureDetected = { [weak self] gesture in
-            guard let bundleID = self?.appWatcher?.frontmostBundleID else { return }
+        monitor.shouldHandleGesture = { [weak watcher] in
+            DispatchQueue.main.sync {
+                guard let bundleID = watcher?.frontmostBundleID else { return false }
+                return ConfigStore.shared.profiles.contains { $0.bundleID == bundleID }
+            }
+        }
+        monitor.onGestureDetected = { [weak watcher] gesture in
+            guard let bundleID = watcher?.frontmostBundleID else { return }
             guard let binding = ConfigStore.shared.binding(for: bundleID, gesture: gesture) else {
                 print("[AppDelegate] No binding for \(gesture) in \(bundleID)")
                 return

@@ -1,9 +1,10 @@
 import Foundation
+import Combine
 
-final class ConfigStore: @unchecked Sendable {
+final class ConfigStore: ObservableObject, @unchecked Sendable {
     static let shared = ConfigStore()
 
-    private(set) var profiles: [AppProfile] = []
+    @Published var profiles: [AppProfile] = []
 
     private var configURL: URL {
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
@@ -31,27 +32,5 @@ final class ConfigStore: @unchecked Sendable {
             .first { $0.bundleID == bundleID }?
             .bindings
             .first { $0.gesture == gesture }
-    }
-
-    func setBinding(_ binding: GestureBinding, for bundleID: String) {
-        if let pi = profiles.firstIndex(where: { $0.bundleID == bundleID }) {
-            if let bi = profiles[pi].bindings.firstIndex(where: { $0.gesture == binding.gesture }) {
-                profiles[pi].bindings[bi] = binding
-            } else {
-                profiles[pi].bindings.append(binding)
-            }
-        } else {
-            profiles.append(AppProfile(bundleID: bundleID, bindings: [binding]))
-        }
-        save()
-    }
-
-    func removeBinding(for bundleID: String, gesture: GestureType) {
-        guard let pi = profiles.firstIndex(where: { $0.bundleID == bundleID }) else { return }
-        profiles[pi].bindings.removeAll { $0.gesture == gesture }
-        if profiles[pi].bindings.isEmpty {
-            profiles.remove(at: pi)
-        }
-        save()
     }
 }
