@@ -9,6 +9,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         menuBarManager = MenuBarManager()
         PermissionManager.requestAuthorization()
+        ConfigStore.shared.load()
 
         let watcher = AppWatcher()
         watcher.startWatching()
@@ -16,11 +17,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let monitor = GestureMonitor()
         monitor.onGestureDetected = { [weak self] gesture in
-            let bundleID = self?.appWatcher?.frontmostBundleID ?? "unknown"
-            print("[AppDelegate] \(gesture) in \(bundleID)")
+            guard let bundleID = self?.appWatcher?.frontmostBundleID else { return }
+            guard let binding = ConfigStore.shared.binding(for: bundleID, gesture: gesture) else {
+                print("[AppDelegate] No binding for \(gesture) in \(bundleID)")
+                return
+            }
+            KeySender.send(keyCode: binding.keyCode, flags: binding.eventFlags)
         }
         monitor.startMonitoring()
         gestureMonitor = monitor
+    }
+
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        print("[AppDelegate] applicationShouldTerminate called")
+        return .terminateNow
+    }
+
+    func applicationWillTerminate(_ notification: Notification) {
+        print("[AppDelegate] applicationWillTerminate called")
+        gestureMonitor?.stopMonitoring()
+        appWatcher?.stopWatching()
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
