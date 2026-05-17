@@ -1,5 +1,6 @@
 import AppKit
-import CoreGraphics
+@preconcurrency import CoreGraphics
+@preconcurrency import CoreFoundation
 
 extension CGEventType {
     static let magnify = CGEventType(rawValue: 29)!
@@ -11,14 +12,14 @@ final class GestureMonitor: @unchecked Sendable {
     var onGestureDetected: ((GestureType) -> Void)?
 
     private var eventTap: CFMachPort?
-    private var runLoopSource: CFRunLoopSource?
+    private var tapRunLoop: CFRunLoop?
     private var accumulatedMagnification: Double = 0
 
     func startMonitoring() {
         guard let tap = CGEvent.tapCreate(
             tap: .cghidEventTap,
             place: .headInsertEventTap,
-            options: .defaultTap,
+            options: .listenOnly,
             eventsOfInterest: kMagnifyEventMask,
             callback: Self.eventTapCallback,
             userInfo: Unmanaged.passUnretained(self).toOpaque()
@@ -27,35 +28,50 @@ final class GestureMonitor: @unchecked Sendable {
             return
         }
 
-        let source = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, tap, 0)
-        CFRunLoopAddSource(CFRunLoopGetMain(), source, .commonModes)
-        CGEvent.tapEnable(tap: tap, enable: true)
-
         eventTap = tap
-        runLoopSource = source
+
+        let thread = Thread {
+            let source = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, tap, 0)
+            let rl = CFRunLoopGetCurrent()
+            CFRunLoopAddSource(rl, source, .commonModes)
+            CGEvent.tapEnable(tap: tap, enable: true)
+            self.tapRunLoop = rl
+            CFRunLoopRun()
+        }
+        thread.name = "GestureMonitor"
+        thread.start()
+        print("[GestureMonitor] started on background thread (cghidEventTap, listenOnly)")
     }
 
     func stopMonitoring() {
         if let tap = eventTap {
             CGEvent.tapEnable(tap: tap, enable: false)
         }
-        if let source = runLoopSource {
-            CFRunLoopRemoveSource(CFRunLoopGetMain(), source, .commonModes)
+        if let rl = tapRunLoop {
+            CFRunLoopStop(rl)
         }
         eventTap = nil
-        runLoopSource = nil
+        tapRunLoop = nil
+    }
+
+    // CGEvent を @unchecked Sendable でラップしてスレッド間で渡す
+    private struct CGEventWrapper: @unchecked Sendable {
+        let event: CGEvent
     }
 
     private static let eventTapCallback: CGEventTapCallBack = { _, type, event, userInfo in
         guard let userInfo else { return Unmanaged.passRetained(event) }
         let monitor = Unmanaged<GestureMonitor>.fromOpaque(userInfo).takeUnretainedValue()
-        monitor.handleEvent(type: type, event: event)
+        let wrapper = CGEventWrapper(event: event)
+        DispatchQueue.main.async {
+            guard let nsEvent = NSEvent(cgEvent: wrapper.event) else { return }
+            monitor.handleEvent(nsEvent: nsEvent)
+        }
         return Unmanaged.passRetained(event)
     }
 
-    private func handleEvent(type: CGEventType, event: CGEvent) {
-        guard type == .magnify, let nsEvent = NSEvent(cgEvent: event) else { return }
-
+    private func handleEvent(nsEvent: NSEvent) {
+        guard nsEvent.type == .magnify else { return }
         switch nsEvent.phase {
         case .began:
             accumulatedMagnification = 0
