@@ -1,10 +1,22 @@
 import CoreGraphics
+import Foundation
 
 struct GestureBinding: Codable, Sendable, Identifiable {
-    var id: GestureType { gesture }
+    var id: UUID
     var gesture: GestureType
     var keyCode: CGKeyCode
     var modifierFlags: UInt64
+    var note: String
+    var enabled: Bool
+
+    init(gesture: GestureType, keyCode: CGKeyCode = 0, modifierFlags: UInt64 = 0, note: String = "", enabled: Bool = true) {
+        self.id = UUID()
+        self.gesture = gesture
+        self.keyCode = keyCode
+        self.modifierFlags = modifierFlags
+        self.note = note
+        self.enabled = enabled
+    }
 
     var eventFlags: CGEventFlags { CGEventFlags(rawValue: modifierFlags) }
 
@@ -12,10 +24,10 @@ struct GestureBinding: Codable, Sendable, Identifiable {
         guard keyCode != 0 else { return "" }
         var parts: [String] = []
         let flags = eventFlags
-        if flags.contains(.maskControl) { parts.append("⌃") }
+        if flags.contains(.maskControl)   { parts.append("⌃") }
         if flags.contains(.maskAlternate) { parts.append("⌥") }
-        if flags.contains(.maskShift) { parts.append("⇧") }
-        if flags.contains(.maskCommand) { parts.append("⌘") }
+        if flags.contains(.maskShift)     { parts.append("⇧") }
+        if flags.contains(.maskCommand)   { parts.append("⌘") }
         parts.append(Self.keyCodeString(keyCode))
         return parts.joined()
     }
@@ -37,5 +49,21 @@ struct GestureBinding: Codable, Sendable, Identifiable {
             123: "←", 124: "→", 125: "↓", 126: "↑",
         ]
         return table[code] ?? "(\(code))"
+    }
+
+    // MARK: - Codable (migration from v1 format: no id/note/enabled)
+
+    private enum CodingKeys: String, CodingKey {
+        case id, gesture, keyCode, modifierFlags, note, enabled
+    }
+
+    init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id            = try c.decodeIfPresent(UUID.self,       forKey: .id)            ?? UUID()
+        gesture       = try c.decode(GestureType.self,         forKey: .gesture)
+        keyCode       = try c.decode(CGKeyCode.self,           forKey: .keyCode)
+        modifierFlags = try c.decode(UInt64.self,              forKey: .modifierFlags)
+        note          = try c.decodeIfPresent(String.self,     forKey: .note)          ?? ""
+        enabled       = try c.decodeIfPresent(Bool.self,       forKey: .enabled)       ?? true
     }
 }
