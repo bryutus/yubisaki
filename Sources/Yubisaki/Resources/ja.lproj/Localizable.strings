@@ -1,0 +1,87 @@
+/* Gesture Groups */
+"gesture.group.twoFinger"   = "2本指";
+"gesture.group.threeFinger" = "3本指";
+"gesture.group.fourFinger"  = "4本指";
+"gesture.group.fiveFinger"  = "5本指";
+"gesture.group.force"       = "フォース";
+"gesture.group.corner"      = "コーナー";
+
+/* Gesture Types */
+"gesture.pinchIn"            = "ピンチイン";
+"gesture.pinchOut"           = "ピンチアウト";
+"gesture.rotateCW"           = "右回転";
+"gesture.rotateCCW"          = "左回転";
+"gesture.twoTipTapLeft"      = "チップタップ (左)";
+"gesture.twoTipTapRight"     = "チップタップ (右)";
+"gesture.twoDoubleTap"       = "ダブルタップ";
+"gesture.twoSwipeUp"         = "上スワイプ";
+"gesture.twoSwipeDown"       = "下スワイプ";
+"gesture.threeTap"           = "タップ";
+"gesture.threeDoubleTap"     = "ダブルタップ";
+"gesture.threeClick"         = "クリック";
+"gesture.threeSwipeUp"       = "上スワイプ";
+"gesture.threeSwipeDown"     = "下スワイプ";
+"gesture.threeSwipeLeft"     = "左スワイプ";
+"gesture.threeSwipeRight"    = "右スワイプ";
+"gesture.threeTipTapLeft"    = "チップタップ (左)";
+"gesture.threeTipTapRight"   = "チップタップ (右)";
+"gesture.fourTap"            = "タップ";
+"gesture.fourDoubleTap"      = "ダブルタップ";
+"gesture.fourSwipeUp"        = "上スワイプ";
+"gesture.fourSwipeDown"      = "下スワイプ";
+"gesture.fourSwipeLeft"      = "左スワイプ";
+"gesture.fourSwipeRight"     = "右スワイプ";
+"gesture.fiveTap"            = "タップ";
+"gesture.fivePinchIn"        = "ピンチイン";
+"gesture.fiveSpread"         = "スプレッド";
+"gesture.forceClick"         = "フォースクリック";
+"gesture.forceDrag"          = "フォースドラッグ";
+"gesture.cornerTopLeft"      = "左上タップ";
+"gesture.cornerTopRight"     = "右上タップ";
+"gesture.cornerBottomLeft"   = "左下タップ";
+"gesture.cornerBottomRight"  = "右下タップ";
+
+/* Menu Bar */
+"menu.settings" = "設定…";
+"menu.quit"     = "yubisakiを終了";
+
+/* Settings Window */
+"settings.title"        = "設定";
+"settings.tab.gestures" = "ジェスチャー";
+"settings.tab.general"  = "一般";
+
+/* App Sidebar */
+"sidebar.section.system"       = "システム";
+"sidebar.section.applications" = "アプリケーション";
+"sidebar.allApps"              = "すべてのアプリ";
+
+/* Gestures Tab */
+"gestures.enabledForApp"    = "このアプリで有効";
+"gestures.gesturesEnabled"  = "ジェスチャーを有効";
+"gestures.column.gesture"   = "ジェスチャー";
+"gestures.column.shortcut"  = "ショートカット";
+"gestures.column.note"      = "メモ";
+"gestures.activeCount"      = "%d個の有効なバインディング";
+
+/* Shortcut Field */
+"shortcut.clickToRecord" = "クリックして記録";
+"shortcut.pressNewKey"   = "新しいキーを入力";
+"shortcut.recording"     = "録音中…";
+
+/* General Tab */
+"general.launchAtLogin"         = "ログイン時にyubisakiを起動";
+"general.launchAtLoginHint"     = "サインインしたとき自動的にメニューバーに常駐します。";
+"general.showMenuBar"           = "メニューバーにアイコンを表示";
+"general.showMenuBarHint"       = "オフにするとyubisakiはバックグラウンドで動作し続けます。";
+"general.showInDock"            = "Dockに表示";
+"general.gesturesEnabled"       = "ジェスチャーを有効化";
+"general.gesturesEnabledHint"   = "グローバルにオンオフを切り替えます。⌃⌥⌘G でいつでもトグルできます。";
+"general.section.permissions"   = "アクセス権限";
+"general.accessibility"         = "アクセシビリティ";
+"general.accessibilityHint"     = "yubisakiはキーボードショートカットを送信するために、アクセシビリティ権限を必要とします。";
+"general.inputMonitoring"       = "入力監視";
+"general.permissionGranted"     = "許可済み";
+"general.openSystemSettings"    = "システム設定を開く…";
+"general.footer.help"           = "ヘルプ";
+"general.footer.privacy"        = "プライバシー";
+"general.footer.reset"          = "リセット…";
