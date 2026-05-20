@@ -42,8 +42,12 @@
 "gesture.cornerBottomRight"  = "Tap Bottom-Right";
 
 /* Menu Bar */
-"menu.settings" = "Settings…";
-"menu.quit"     = "Quit yubisaki";
+"menu.status.running" = "Running";
+"menu.status.paused"  = "Paused";
+"menu.pause"          = "Pause";
+"menu.resume"         = "Resume";
+"menu.settings"       = "Settings…";
+"menu.quit"           = "Quit yubisaki";
 
 /* Settings Window */
 "settings.title"        = "Settings";

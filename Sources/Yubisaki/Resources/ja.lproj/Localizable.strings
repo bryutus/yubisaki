@@ -42,8 +42,12 @@
 "gesture.cornerBottomRight"  = "右下タップ";
 
 /* Menu Bar */
-"menu.settings" = "設定…";
-"menu.quit"     = "yubisakiを終了";
+"menu.status.running" = "有効";
+"menu.status.paused"  = "一時停止中";
+"menu.pause"          = "一時停止";
+"menu.resume"         = "再開";
+"menu.settings"       = "設定…";
+"menu.quit"           = "yubisakiを終了";
 
 /* Settings Window */
 "settings.title"        = "設定";
