@@ -45,6 +45,7 @@ private struct GesturesTabView: View {
     var body: some View {
         NavigationSplitView {
             appList
+                .navigationSplitViewColumnWidth(min: 200, ideal: 220)
         } detail: {
             detailPane
         }
@@ -61,7 +62,7 @@ private struct GesturesTabView: View {
                 )
                 .tag("global")
             } header: {
-                sectionHeader(Text("sidebar.section.system"))
+                sectionHeader(Text(L("sidebar.section.system")))
             }
 
             Section {
@@ -73,7 +74,7 @@ private struct GesturesTabView: View {
                     .tag(profile.bundleID)
                 }
             } header: {
-                sectionHeader(Text("sidebar.section.applications"))
+                sectionHeader(Text(L("sidebar.section.applications")))
             }
         }
         .toolbar {
@@ -93,7 +94,6 @@ private struct GesturesTabView: View {
         label
             .font(.system(size: 10, weight: .bold))
             .tracking(0.5)
-            .textCase(.uppercase)
             .foregroundStyle(.secondary)
     }
 
@@ -167,7 +167,7 @@ private struct AppRowView: View {
     }
 
     private var appName: String {
-        if isGlobal { return String(localized: "sidebar.allApps") }
+        if isGlobal { return L("sidebar.allApps") }
         return appURL.map { $0.deletingPathExtension().lastPathComponent } ?? bundleID
     }
 

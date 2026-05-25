@@ -1,11 +1,9 @@
 enum GestureGroup: CaseIterable, Sendable {
     case twoFinger, threeFinger, fourFinger, fiveFinger, force, corner
 
-    var displayName: String {
-        String(localized: localizationKey, bundle: .module)
-    }
+    var displayName: String { L(localizationKey) }
 
-    private var localizationKey: String.LocalizationValue {
+    private var localizationKey: String {
         switch self {
         case .twoFinger:   return "gesture.group.twoFinger"
         case .threeFinger: return "gesture.group.threeFinger"
@@ -65,11 +63,9 @@ enum GestureType: Codable, Sendable, Hashable, CaseIterable {
         }
     }
 
-    var displayName: String {
-        String(localized: localizationKey, bundle: .module)
-    }
+    var displayName: String { L(localizationKey) }
 
-    private var localizationKey: String.LocalizationValue {
+    private var localizationKey: String {
         switch self {
         case .pinchIn:           return "gesture.pinchIn"
         case .pinchOut:          return "gesture.pinchOut"

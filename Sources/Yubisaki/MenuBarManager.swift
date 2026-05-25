@@ -39,7 +39,7 @@ final class MenuBarManager: NSObject {
         menu.autoenablesItems = false
 
         let statusItem = NSMenuItem(
-            title: String(localized: enabled ? "menu.status.running" : "menu.status.paused", bundle: .module),
+            title: L(enabled ? "menu.status.running" : "menu.status.paused"),
             action: nil,
             keyEquivalent: ""
         )
@@ -50,7 +50,7 @@ final class MenuBarManager: NSObject {
         menu.addItem(.separator())
 
         let toggleItem = NSMenuItem(
-            title: String(localized: enabled ? "menu.pause" : "menu.resume", bundle: .module),
+            title: L(enabled ? "menu.pause" : "menu.resume"),
             action: #selector(toggleGestures),
             keyEquivalent: ""
         )
@@ -61,7 +61,7 @@ final class MenuBarManager: NSObject {
         menu.addItem(.separator())
 
         let settingsItem = NSMenuItem(
-            title: String(localized: "menu.settings", bundle: .module),
+            title: L("menu.settings"),
             action: #selector(openSettings),
             keyEquivalent: ","
         )
@@ -70,7 +70,7 @@ final class MenuBarManager: NSObject {
         menu.addItem(settingsItem)
 
         let quitItem = NSMenuItem(
-            title: String(localized: "menu.quit", bundle: .module),
+            title: L("menu.quit"),
             action: #selector(quit),
             keyEquivalent: "q"
         )
