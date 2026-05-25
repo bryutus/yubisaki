@@ -26,6 +26,7 @@ struct GlobalPreferences: Codable, Sendable {
 final class ConfigStore: ObservableObject, @unchecked Sendable {
     static let shared = ConfigStore()
 
+    @Published var globalProfile = AppProfile(bundleID: "global")
     @Published var profiles: [AppProfile] = []
     @Published var preferences = GlobalPreferences()
 
@@ -36,15 +37,18 @@ final class ConfigStore: ObservableObject, @unchecked Sendable {
 
     private var profilesURL: URL { baseURL.appending(component: "config.json") }
     private var preferencesURL: URL { baseURL.appending(component: "preferences.json") }
+    private var globalProfileURL: URL { baseURL.appending(component: "global.json") }
 
     func load() {
         loadProfiles()
         loadPreferences()
+        loadGlobalProfile()
     }
 
     func save() {
         saveProfiles()
         savePreferences()
+        saveGlobalProfile()
     }
 
     func savePreferences() {
@@ -60,6 +64,20 @@ final class ConfigStore: ObservableObject, @unchecked Sendable {
     }
 
     // MARK: - Private
+
+    private func loadGlobalProfile() {
+        guard
+            let data = try? Data(contentsOf: globalProfileURL),
+            let decoded = try? JSONDecoder().decode(AppProfile.self, from: data)
+        else { return }
+        globalProfile = decoded
+    }
+
+    private func saveGlobalProfile() {
+        ensureBaseDirectory()
+        guard let data = try? JSONEncoder().encode(globalProfile) else { return }
+        try? data.write(to: globalProfileURL, options: .atomic)
+    }
 
     private func loadProfiles() {
         ensureBaseDirectory()

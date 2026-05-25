@@ -40,7 +40,7 @@ struct SettingsView: View {
 
 private struct GesturesTabView: View {
     @ObservedObject var configStore: ConfigStore
-    @State private var selectedBundleID: String?
+    @State private var selectedBundleID: String? = "global"
 
     var body: some View {
         NavigationSplitView {
@@ -54,12 +54,28 @@ private struct GesturesTabView: View {
 
     private var appList: some View {
         List(selection: $selectedBundleID) {
-            ForEach(configStore.profiles) { profile in
-                AppRowView(bundleID: profile.bundleID)
+            Section {
+                AppRowView(
+                    bundleID: "global",
+                    enabledCount: configStore.globalProfile.bindings.filter(\.enabled).count
+                )
+                .tag("global")
+            } header: {
+                sectionHeader(Text("sidebar.section.system"))
+            }
+
+            Section {
+                ForEach(configStore.profiles) { profile in
+                    AppRowView(
+                        bundleID: profile.bundleID,
+                        enabledCount: profile.bindings.filter(\.enabled).count
+                    )
                     .tag(profile.bundleID)
+                }
+            } header: {
+                sectionHeader(Text("sidebar.section.applications"))
             }
         }
-        .navigationTitle("アプリ")
         .toolbar {
             ToolbarItemGroup {
                 Button(action: addApp) {
@@ -68,17 +84,35 @@ private struct GesturesTabView: View {
                 Button(action: removeSelected) {
                     Image(systemName: "minus")
                 }
-                .disabled(selectedBundleID == nil)
+                .disabled(selectedBundleID == nil || selectedBundleID == "global")
             }
         }
+    }
+
+    private func sectionHeader(_ label: Text) -> some View {
+        label
+            .font(.system(size: 10, weight: .bold))
+            .tracking(0.5)
+            .textCase(.uppercase)
+            .foregroundStyle(.secondary)
     }
 
     // MARK: - Detail
 
     @ViewBuilder
     private var detailPane: some View {
-        if let id = selectedBundleID,
-           let index = configStore.profiles.firstIndex(where: { $0.bundleID == id }) {
+        if selectedBundleID == "global" {
+            BindingsView(
+                profile: Binding(
+                    get: { configStore.globalProfile },
+                    set: {
+                        configStore.globalProfile = $0
+                        configStore.save()
+                    }
+                )
+            )
+        } else if let id = selectedBundleID,
+                  let index = configStore.profiles.firstIndex(where: { $0.bundleID == id }) {
             BindingsView(
                 profile: Binding(
                     get: { configStore.profiles[index] },
@@ -124,33 +158,52 @@ private struct GesturesTabView: View {
 
 private struct AppRowView: View {
     let bundleID: String
+    let enabledCount: Int
+
+    private var isGlobal: Bool { bundleID == "global" }
 
     private var appURL: URL? {
-        NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID)
+        isGlobal ? nil : NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID)
     }
 
     private var appName: String {
-        appURL.map { $0.deletingPathExtension().lastPathComponent } ?? bundleID
-    }
-
-    private var appIcon: NSImage {
-        if let url = appURL {
-            return NSWorkspace.shared.icon(forFile: url.path)
-        }
-        return NSImage(named: NSImage.applicationIconName) ?? NSImage()
+        if isGlobal { return String(localized: "sidebar.allApps") }
+        return appURL.map { $0.deletingPathExtension().lastPathComponent } ?? bundleID
     }
 
     var body: some View {
-        HStack(spacing: 10) {
-            Image(nsImage: appIcon)
-                .resizable()
-                .frame(width: 32, height: 32)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(appName).font(.body)
-                Text(bundleID).font(.caption).foregroundStyle(.secondary)
+        HStack(spacing: 8) {
+            appIconView
+            Text(appName)
+                .font(.system(size: 12, weight: .medium))
+                .lineLimit(1)
+            Spacer()
+            if enabledCount > 0 {
+                Text("\(enabledCount)")
+                    .font(.system(size: 10))
+                    .foregroundStyle(.tertiary)
+                    .monospacedDigit()
             }
         }
         .padding(.vertical, 2)
+    }
+
+    @ViewBuilder
+    private var appIconView: some View {
+        if let url = appURL {
+            Image(nsImage: NSWorkspace.shared.icon(forFile: url.path))
+                .resizable()
+                .frame(width: 20, height: 20)
+        } else {
+            ZStack {
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(Color(nsColor: .tertiaryLabelColor).opacity(0.25))
+                    .frame(width: 20, height: 20)
+                Image(systemName: "hand.draw")
+                    .font(.system(size: 10))
+                    .foregroundStyle(.secondary)
+            }
+        }
     }
 }
 
