@@ -211,55 +211,118 @@ private struct AppRowView: View {
 
 private struct BindingsView: View {
     @Binding var profile: AppProfile
-
-    private var availableGestures: [GestureType] {
-        GestureType.allCases.filter { g in
-            !profile.bindings.contains { $0.gesture == g }
-        }
-    }
-
-    private var appName: String {
-        NSWorkspace.shared
-            .urlForApplication(withBundleIdentifier: profile.bundleID)
-            .map { $0.deletingPathExtension().lastPathComponent }
-            ?? profile.bundleID
-    }
+    @State private var selectedBindingID: UUID?
 
     var body: some View {
         VStack(spacing: 0) {
-            if profile.bindings.isEmpty {
-                Spacer()
-                Text("ジェスチャーバインディングがありません")
-                    .foregroundStyle(.secondary)
-                Spacer()
-            } else {
-                ScrollView {
-                    VStack(spacing: 0) {
-                        ForEach(profile.bindings.indices, id: \.self) { i in
-                            BindingRowView(
-                                binding: $profile.bindings[i],
-                                onDelete: { profile.bindings.remove(at: i) }
-                            )
-                            Divider()
+            AppHeaderView(
+                bundleID: profile.bundleID,
+                isGlobalProfile: profile.bundleID == "global",
+                enabled: $profile.enabled
+            )
+            Divider()
+            ColumnHeaderRow()
+            Divider()
+            Group {
+                if profile.bindings.isEmpty {
+                    Text("ジェスチャーバインディングがありません")
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    ScrollView {
+                        VStack(spacing: 0) {
+                            ForEach($profile.bindings) { $binding in
+                                BindingRowView(
+                                    binding: $binding,
+                                    isSelected: selectedBindingID == binding.id,
+                                    onSelect: { selectedBindingID = binding.id }
+                                )
+                                Divider()
+                            }
                         }
                     }
-                    .padding(.horizontal, 16)
                 }
             }
+            .opacity(profile.enabled ? 1.0 : 0.55)
+            Divider()
+            BindingsFooter(profile: $profile, selectedBindingID: $selectedBindingID)
+        }
+    }
+}
 
-            if !availableGestures.isEmpty {
-                Divider()
-                Button(action: addBinding) {
-                    Label("バインディングを追加", systemImage: "plus")
-                }
-                .padding(12)
+// MARK: - App Header
+
+private struct AppHeaderView: View {
+    let bundleID: String
+    let isGlobalProfile: Bool
+    @Binding var enabled: Bool
+
+    private var appURL: URL? {
+        isGlobalProfile ? nil : NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID)
+    }
+
+    private var appName: String {
+        if isGlobalProfile { return L("sidebar.allApps") }
+        return appURL.map { $0.deletingPathExtension().lastPathComponent } ?? bundleID
+    }
+
+    private var toggleLabel: String {
+        isGlobalProfile ? L("gestures.gesturesEnabled") : L("gestures.enabledForApp")
+    }
+
+    var body: some View {
+        HStack(spacing: 12) {
+            appIconView
+            Text(appName)
+                .font(.system(size: 15, weight: .semibold))
+            Spacer()
+            Text(toggleLabel)
+                .font(.system(size: 12))
+            Toggle("", isOn: $enabled)
+                .toggleStyle(.switch)
+                .labelsHidden()
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+    }
+
+    @ViewBuilder
+    private var appIconView: some View {
+        if let url = appURL {
+            Image(nsImage: NSWorkspace.shared.icon(forFile: url.path))
+                .resizable()
+                .frame(width: 44, height: 44)
+        } else {
+            ZStack {
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(Color(nsColor: .tertiaryLabelColor).opacity(0.15))
+                    .frame(width: 44, height: 44)
+                Image(systemName: "hand.draw")
+                    .font(.system(size: 20))
+                    .foregroundStyle(.secondary)
             }
         }
     }
+}
 
-    private func addBinding() {
-        guard let gesture = availableGestures.first else { return }
-        profile.bindings.append(GestureBinding(gesture: gesture, keyCode: 0, modifierFlags: 0))
+// MARK: - Column Header Row
+
+private struct ColumnHeaderRow: View {
+    var body: some View {
+        HStack(spacing: 12) {
+            Color.clear.frame(width: 14, height: 1) // checkbox space
+            Text(L("gestures.column.gesture"))
+                .frame(width: 200, alignment: .leading)
+            Text(L("gestures.column.shortcut"))
+                .frame(maxWidth: .infinity, alignment: .leading)
+            Text(L("gestures.column.note"))
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .font(.system(size: 10, weight: .bold))
+        .tracking(0.3)
+        .foregroundStyle(.secondary)
+        .padding(.horizontal, 16)
+        .frame(height: 28)
     }
 }
 
@@ -267,24 +330,94 @@ private struct BindingsView: View {
 
 private struct BindingRowView: View {
     @Binding var binding: GestureBinding
-    var onDelete: () -> Void
+    var isSelected: Bool
+    var onSelect: () -> Void
 
     var body: some View {
-        HStack {
-            Text(binding.gesture.displayName)
-                .frame(width: 130, alignment: .leading)
-            KeyRecorderView(
-                keyCode: $binding.keyCode,
-                modifierFlags: $binding.modifierFlags
-            )
-            .frame(height: 28)
-            Button(action: onDelete) {
-                Image(systemName: "trash")
+        HStack(spacing: 12) {
+            Toggle("", isOn: $binding.enabled)
+                .toggleStyle(.checkbox)
+                .labelsHidden()
+                .frame(width: 14)
+
+            Picker("", selection: $binding.gesture) {
+                ForEach(GestureGroup.allCases, id: \.self) { group in
+                    Section(group.displayName) {
+                        ForEach(
+                            GestureType.allCases.filter { $0.group == group },
+                            id: \.self
+                        ) { gesture in
+                            Label(gesture.displayName, systemImage: gesture.sfSymbol)
+                                .tag(gesture)
+                        }
+                    }
+                }
             }
-            .buttonStyle(.plain)
-            .foregroundStyle(.secondary)
+            .labelsHidden()
+            .pickerStyle(.menu)
+            .frame(width: 200)
+
+            KeyRecorderView(keyCode: $binding.keyCode, modifierFlags: $binding.modifierFlags)
+                .frame(maxWidth: .infinity, minHeight: 26, maxHeight: 28)
+
+            TextField(L("gestures.column.note"), text: $binding.note)
+                .textFieldStyle(.plain)
+                .font(.system(size: 12))
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity)
         }
-        .padding(.vertical, 2)
+        .padding(.vertical, 6)
+        .padding(.horizontal, 16)
+        .background(isSelected ? Color.accentColor.opacity(0.12) : Color.clear)
+        .contentShape(Rectangle())
+        .simultaneousGesture(TapGesture().onEnded { onSelect() })
+    }
+}
+
+// MARK: - Bindings Footer
+
+private struct BindingsFooter: View {
+    @Binding var profile: AppProfile
+    @Binding var selectedBindingID: UUID?
+
+    private var enabledCount: Int { profile.bindings.filter(\.enabled).count }
+
+    var body: some View {
+        HStack(spacing: 2) {
+            Button(action: addBinding) { Image(systemName: "plus") }
+                .buttonStyle(.plain)
+                .padding(6)
+
+            Button(action: deleteSelected) { Image(systemName: "minus") }
+                .buttonStyle(.plain)
+                .padding(6)
+                .disabled(selectedBindingID == nil)
+
+            Spacer()
+
+            if !profile.bindings.isEmpty {
+                Text(String(format: L("gestures.activeCount"), enabledCount))
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+                    .padding(.trailing, 16)
+            }
+        }
+        .padding(.leading, 8)
+        .frame(height: 36)
+    }
+
+    private func addBinding() {
+        let used = Set(profile.bindings.map(\.gesture))
+        let gesture = GestureType.allCases.first { !used.contains($0) } ?? .pinchIn
+        let newBinding = GestureBinding(gesture: gesture, enabled: false)
+        profile.bindings.append(newBinding)
+        selectedBindingID = newBinding.id
+    }
+
+    private func deleteSelected() {
+        guard let id = selectedBindingID else { return }
+        profile.bindings.removeAll { $0.id == id }
+        selectedBindingID = nil
     }
 }
 

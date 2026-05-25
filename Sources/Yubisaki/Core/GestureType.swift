@@ -65,6 +65,44 @@ enum GestureType: Codable, Sendable, Hashable, CaseIterable {
 
     var displayName: String { L(localizationKey) }
 
+    var sfSymbol: String {
+        switch self {
+        case .pinchIn:           return "arrow.down.right.and.arrow.up.left"
+        case .pinchOut:          return "arrow.up.left.and.arrow.down.right"
+        case .rotateCW:          return "arrow.clockwise"
+        case .rotateCCW:         return "arrow.counterclockwise"
+        case .twoTipTapLeft:     return "hand.tap"
+        case .twoTipTapRight:    return "hand.tap"
+        case .twoDoubleTap:      return "hand.tap"
+        case .twoSwipeUp:        return "arrow.up"
+        case .twoSwipeDown:      return "arrow.down"
+        case .threeTap:          return "3.circle"
+        case .threeDoubleTap:    return "3.circle"
+        case .threeClick:        return "hand.point.up"
+        case .threeSwipeUp:      return "arrow.up.circle"
+        case .threeSwipeDown:    return "arrow.down.circle"
+        case .threeSwipeLeft:    return "arrow.left.circle"
+        case .threeSwipeRight:   return "arrow.right.circle"
+        case .threeTipTapLeft:   return "3.circle"
+        case .threeTipTapRight:  return "3.circle"
+        case .fourTap:           return "4.circle"
+        case .fourDoubleTap:     return "4.circle"
+        case .fourSwipeUp:       return "arrow.up.square"
+        case .fourSwipeDown:     return "arrow.down.square"
+        case .fourSwipeLeft:     return "arrow.left.square"
+        case .fourSwipeRight:    return "arrow.right.square"
+        case .fiveTap:           return "5.circle"
+        case .fivePinchIn:       return "arrow.down.right.and.arrow.up.left"
+        case .fiveSpread:        return "arrow.up.left.and.arrow.down.right"
+        case .forceClick:        return "hand.point.up.fill"
+        case .forceDrag:         return "hand.draw"
+        case .cornerTopLeft:     return "arrow.up.left.square"
+        case .cornerTopRight:    return "arrow.up.right.square"
+        case .cornerBottomLeft:  return "arrow.down.left.square"
+        case .cornerBottomRight: return "arrow.down.right.square"
+        }
+    }
+
     private var localizationKey: String {
         switch self {
         case .pinchIn:           return "gesture.pinchIn"
