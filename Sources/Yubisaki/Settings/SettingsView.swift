@@ -2,7 +2,43 @@ import SwiftUI
 import AppKit
 import UniformTypeIdentifiers
 
+enum SettingsTab: String, CaseIterable {
+    case gestures = "ジェスチャー"
+    case general = "一般"
+}
+
 struct SettingsView: View {
+    @ObservedObject var configStore: ConfigStore
+    @State private var selectedTab: SettingsTab = .gestures
+
+    var body: some View {
+        Group {
+            switch selectedTab {
+            case .gestures:
+                GesturesTabView(configStore: configStore)
+            case .general:
+                GeneralTabView()
+            }
+        }
+        .frame(minWidth: 960, minHeight: 660)
+        .toolbar {
+            ToolbarItem(placement: .principal) {
+                Picker("", selection: $selectedTab) {
+                    ForEach(SettingsTab.allCases, id: \.self) { tab in
+                        Text(tab.rawValue).tag(tab)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .frame(width: 200)
+                .labelsHidden()
+            }
+        }
+    }
+}
+
+// MARK: - Gestures Tab
+
+private struct GesturesTabView: View {
     @ObservedObject var configStore: ConfigStore
     @State private var selectedBundleID: String?
 
@@ -12,7 +48,6 @@ struct SettingsView: View {
         } detail: {
             detailPane
         }
-        .frame(minWidth: 680, minHeight: 420)
     }
 
     // MARK: - Sidebar
@@ -167,7 +202,6 @@ private struct BindingsView: View {
                 .padding(12)
             }
         }
-        .navigationTitle(appName)
     }
 
     private func addBinding() {
@@ -198,5 +232,15 @@ private struct BindingRowView: View {
             .foregroundStyle(.secondary)
         }
         .padding(.vertical, 2)
+    }
+}
+
+// MARK: - General Tab
+
+private struct GeneralTabView: View {
+    var body: some View {
+        Text("一般設定（フェーズ7-Gで実装）")
+            .foregroundStyle(.secondary)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
