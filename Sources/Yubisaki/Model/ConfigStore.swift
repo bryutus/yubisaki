@@ -1,7 +1,7 @@
 import Foundation
 import Combine
 
-struct GlobalPreferences: Codable, Sendable {
+struct GlobalPreferences: Codable, Sendable, Equatable {
     var gesturesEnabled: Bool = true
     var launchAtLogin: Bool = false
     var showMenuBar: Bool = true

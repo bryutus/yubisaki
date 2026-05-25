@@ -5,6 +5,20 @@ import IOKit.hid
 @MainActor
 enum PermissionManager {
 
+    static var isAccessibilityGranted: Bool {
+        AXIsProcessTrusted()
+    }
+
+    static var isInputMonitoringGranted: Bool {
+        IOHIDCheckAccess(kIOHIDRequestTypeListenEvent) == kIOHIDAccessTypeGranted
+    }
+
+    static func openSystemSettings() {
+        NSWorkspace.shared.open(
+            URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!
+        )
+    }
+
     static func requestAuthorization() {
         requestAccessibility()
         requestInputMonitoring()
