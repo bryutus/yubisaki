@@ -77,15 +77,28 @@ private struct GesturesTabView: View {
                 sectionHeader(Text(L("sidebar.section.applications")))
             }
         }
-        .toolbar {
-            ToolbarItemGroup {
-                Button(action: addApp) {
-                    Image(systemName: "plus")
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            VStack(spacing: 0) {
+                Divider()
+                HStack(spacing: 2) {
+                    Button(action: addApp) {
+                        Image(systemName: "plus")
+                    }
+                    .buttonStyle(.plain)
+                    .padding(6)
+
+                    Button(action: removeSelected) {
+                        Image(systemName: "minus")
+                    }
+                    .buttonStyle(.plain)
+                    .padding(6)
+                    .disabled(selectedBundleID == nil || selectedBundleID == "global")
+
+                    Spacer()
                 }
-                Button(action: removeSelected) {
-                    Image(systemName: "minus")
-                }
-                .disabled(selectedBundleID == nil || selectedBundleID == "global")
+                .padding(.leading, 4)
+                .frame(height: 36)
+                .background(Color(nsColor: .windowBackgroundColor))
             }
         }
     }
