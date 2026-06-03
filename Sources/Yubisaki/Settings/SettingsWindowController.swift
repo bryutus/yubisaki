@@ -8,9 +8,11 @@ final class SettingsWindowController: NSWindowController {
     private init() {
         let hosting = NSHostingController(rootView: SettingsView(configStore: .shared))
         let window = NSWindow(contentViewController: hosting)
-        window.title = "yubisaki — 設定"
+        window.title = ""
         window.setContentSize(NSSize(width: 960, height: 660))
-        window.styleMask = [.titled, .closable, .resizable, .miniaturizable]
+        window.styleMask = [.titled, .closable, .resizable, .miniaturizable, .fullSizeContentView]
+        window.titlebarAppearsTransparent = true
+        window.titleVisibility = .hidden
         window.center()
         super.init(window: window)
     }

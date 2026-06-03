@@ -10,36 +10,6 @@ enum SettingsTab: String, CaseIterable {
 struct SettingsView: View {
     @ObservedObject var configStore: ConfigStore
     @State private var selectedTab: SettingsTab = .gestures
-
-    var body: some View {
-        Group {
-            switch selectedTab {
-            case .gestures:
-                GesturesTabView(configStore: configStore)
-            case .general:
-                GeneralTabView(configStore: configStore)
-            }
-        }
-        .frame(minWidth: 960, minHeight: 660)
-        .toolbar {
-            ToolbarItem(placement: .principal) {
-                Picker("", selection: $selectedTab) {
-                    ForEach(SettingsTab.allCases, id: \.self) { tab in
-                        Text(tab.rawValue).tag(tab)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .frame(width: 200)
-                .labelsHidden()
-            }
-        }
-    }
-}
-
-// MARK: - Gestures Tab
-
-private struct GesturesTabView: View {
-    @ObservedObject var configStore: ConfigStore
     @State private var selectedBundleID: String? = "global"
 
     var body: some View {
@@ -47,67 +17,70 @@ private struct GesturesTabView: View {
             appList
                 .navigationSplitViewColumnWidth(min: 200, ideal: 220)
         } detail: {
-            detailPane
+            switch selectedTab {
+            case .gestures:
+                detailPane
+            case .general:
+                GeneralTabView(configStore: configStore)
+            }
         }
+        .frame(minWidth: 960, minHeight: 660)
     }
 
     // MARK: - Sidebar
 
     private var appList: some View {
         List(selection: $selectedBundleID) {
-            Section {
-                AppRowView(
-                    bundleID: "global",
-                    enabledCount: configStore.globalProfile.bindings.filter(\.enabled).count
-                )
-                .tag("global")
-            } header: {
-                sectionHeader(Text(L("sidebar.section.system")))
-            }
+            AppRowView(
+                bundleID: "global",
+                enabledCount: configStore.globalProfile.bindings.filter(\.enabled).count
+            )
+            .tag("global")
 
-            Section {
-                ForEach(configStore.profiles) { profile in
-                    AppRowView(
-                        bundleID: profile.bundleID,
-                        enabledCount: profile.bindings.filter(\.enabled).count
-                    )
-                    .tag(profile.bundleID)
-                }
-            } header: {
-                sectionHeader(Text(L("sidebar.section.applications")))
+            ForEach(configStore.profiles) { profile in
+                AppRowView(
+                    bundleID: profile.bundleID,
+                    enabledCount: profile.bindings.filter(\.enabled).count
+                )
+                .tag(profile.bundleID)
             }
+        }
+        .onChange(of: selectedBundleID) { _, _ in
+            if selectedTab == .general {
+                selectedTab = .gestures
+            }
+        }
+        .safeAreaInset(edge: .top, spacing: 0) {
+            Color.clear.frame(height: 28)
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            VStack(spacing: 0) {
-                Divider()
-                HStack(spacing: 2) {
-                    Button(action: addApp) {
-                        Image(systemName: "plus")
-                    }
-                    .buttonStyle(.plain)
-                    .padding(6)
-
-                    Button(action: removeSelected) {
-                        Image(systemName: "minus")
-                    }
-                    .buttonStyle(.plain)
-                    .padding(6)
-                    .disabled(selectedBundleID == nil || selectedBundleID == "global")
-
-                    Spacer()
+            HStack(spacing: 2) {
+                Button(action: addApp) {
+                    Image(systemName: "plus")
                 }
-                .padding(.leading, 4)
-                .frame(height: 36)
-                .background(Color(nsColor: .windowBackgroundColor))
-            }
-        }
-    }
+                .buttonStyle(.plain)
+                .padding(6)
 
-    private func sectionHeader(_ label: Text) -> some View {
-        label
-            .font(.system(size: 10, weight: .bold))
-            .tracking(0.5)
-            .foregroundStyle(.secondary)
+                Button(action: removeSelected) {
+                    Image(systemName: "minus")
+                }
+                .buttonStyle(.plain)
+                .padding(6)
+                .disabled(selectedBundleID == nil || selectedBundleID == "global")
+
+                Spacer()
+
+                Button(action: { selectedTab = selectedTab == .general ? .gestures : .general }) {
+                    Image(systemName: "gearshape")
+                        .font(.system(size: 11))
+                }
+                .buttonStyle(.plain)
+                .padding(6)
+                .padding(.trailing, 4)
+            }
+            .padding(.leading, 4)
+            .frame(height: 36)
+        }
     }
 
     // MARK: - Detail
@@ -193,8 +166,8 @@ private struct AppRowView: View {
             Spacer()
             if enabledCount > 0 {
                 Text("\(enabledCount)")
-                    .font(.system(size: 10))
-                    .foregroundStyle(.tertiary)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(.secondary)
                     .monospacedDigit()
             }
         }
@@ -227,38 +200,49 @@ private struct BindingsView: View {
     @State private var selectedBindingID: UUID?
 
     var body: some View {
-        VStack(spacing: 0) {
-            AppHeaderView(
-                bundleID: profile.bundleID,
-                isGlobalProfile: profile.bundleID == "global",
-                enabled: $profile.enabled
-            )
-            Divider()
-            ColumnHeaderRow()
-            Divider()
-            Group {
-                if profile.bindings.isEmpty {
-                    Text("ジェスチャーバインディングがありません")
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else {
-                    ScrollView {
-                        VStack(spacing: 0) {
-                            ForEach($profile.bindings) { $binding in
-                                BindingRowView(
-                                    binding: $binding,
-                                    isSelected: selectedBindingID == binding.id,
-                                    onSelect: { selectedBindingID = binding.id }
-                                )
-                                Divider()
-                            }
+        ScrollView {
+            VStack(alignment: .leading, spacing: 12) {
+                AppHeaderView(
+                    bundleID: profile.bundleID,
+                    isGlobalProfile: profile.bundleID == "global",
+                    enabled: $profile.enabled
+                )
+
+                VStack(spacing: 0) {
+                    ColumnHeaderRow()
+                    Divider()
+                    if profile.bindings.isEmpty {
+                        Text("ジェスチャーバインディングがありません")
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .center)
+                            .padding(.vertical, 40)
+                    } else {
+                        ForEach($profile.bindings) { $binding in
+                            BindingRowView(
+                                binding: $binding,
+                                isSelected: selectedBindingID == binding.id,
+                                onSelect: { selectedBindingID = binding.id }
+                            )
+                            Divider()
                         }
                     }
                 }
+                .opacity(profile.enabled ? 1.0 : 0.55)
+                .background(Color(nsColor: .controlBackgroundColor))
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(Color(nsColor: .separatorColor).opacity(0.6), lineWidth: 0.5)
+                )
             }
-            .opacity(profile.enabled ? 1.0 : 0.55)
-            Divider()
+            .padding(.horizontal, 16)
+            .padding(.top, 16)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color(nsColor: .windowBackgroundColor))
+        .safeAreaInset(edge: .bottom, spacing: 0) {
             BindingsFooter(profile: $profile, selectedBindingID: $selectedBindingID)
+                .padding(.horizontal, 8)
         }
     }
 }
@@ -393,8 +377,6 @@ private struct BindingsFooter: View {
     @Binding var profile: AppProfile
     @Binding var selectedBindingID: UUID?
 
-    private var enabledCount: Int { profile.bindings.filter(\.enabled).count }
-
     var body: some View {
         HStack(spacing: 2) {
             Button(action: addBinding) { Image(systemName: "plus") }
@@ -407,13 +389,6 @@ private struct BindingsFooter: View {
                 .disabled(selectedBindingID == nil)
 
             Spacer()
-
-            if !profile.bindings.isEmpty {
-                Text(String(format: L("gestures.activeCount"), enabledCount))
-                    .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
-                    .padding(.trailing, 16)
-            }
         }
         .padding(.leading, 8)
         .frame(height: 36)
@@ -522,7 +497,6 @@ private struct FormGroupView<Content: View>: View {
                     .font(.system(size: 11, weight: .bold))
                     .tracking(0.3)
                     .foregroundStyle(.secondary)
-                    .padding(.horizontal, 24)
                     .padding(.bottom, 6)
             }
             VStack(spacing: 0) {
