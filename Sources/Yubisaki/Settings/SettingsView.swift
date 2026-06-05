@@ -98,13 +98,15 @@ struct SettingsView: View {
                 )
             )
         } else if let id = selectedBundleID,
-                  let index = configStore.profiles.firstIndex(where: { $0.bundleID == id }) {
+                  configStore.profiles.contains(where: { $0.bundleID == id }) {
             BindingsView(
                 profile: Binding(
-                    get: { configStore.profiles[index] },
+                    get: { configStore.profiles.first(where: { $0.bundleID == id }) ?? AppProfile(bundleID: id) },
                     set: {
-                        configStore.profiles[index] = $0
-                        configStore.save()
+                        if let i = configStore.profiles.firstIndex(where: { $0.bundleID == id }) {
+                            configStore.profiles[i] = $0
+                            configStore.save()
+                        }
                     }
                 )
             )
