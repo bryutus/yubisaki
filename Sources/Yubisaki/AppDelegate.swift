@@ -2,12 +2,10 @@ import AppKit
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
-    private var menuBarManager: MenuBarManager?
     private var gestureMonitor: GestureMonitor?
     private var appWatcher: AppWatcher?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        menuBarManager = MenuBarManager()
         PermissionManager.requestAuthorization()
         ConfigStore.shared.load()
 
