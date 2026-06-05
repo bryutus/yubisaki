@@ -62,7 +62,7 @@ struct GeneralSettingsView: View {
                 .padding(.bottom, 28)
             }
         }
-        .background(.background)
+        .background(Color(nsColor: .windowBackgroundColor))
         .onAppear {
             accessibilityGranted = PermissionManager.isAccessibilityGranted
             inputMonitoringGranted = PermissionManager.isInputMonitoringGranted
@@ -90,9 +90,8 @@ private struct FormGroupView<Content: View>: View {
         VStack(alignment: .leading, spacing: 0) {
             if let title {
                 Text(title)
-                    .font(.caption.weight(.bold))
-                    .tracking(0.3)
-                    .foregroundStyle(.secondary)
+                    .font(.callout.weight(.semibold))
+                    .foregroundStyle(.primary)
                     .padding(.bottom, 6)
             }
             VStack(spacing: 0) {
