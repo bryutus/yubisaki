@@ -57,10 +57,12 @@ final class ConfigStore: ObservableObject, @unchecked Sendable {
     }
 
     func binding(for bundleID: String, gesture: GestureType) -> GestureBinding? {
-        profiles
-            .first { $0.bundleID == bundleID }?
-            .bindings
-            .first { $0.gesture == gesture && $0.enabled }
+        if let b = profiles.first(where: { $0.bundleID == bundleID && $0.enabled })?
+            .bindings.first(where: { $0.gesture == gesture && $0.enabled }) {
+            return b
+        }
+        guard globalProfile.enabled else { return nil }
+        return globalProfile.bindings.first { $0.gesture == gesture && $0.enabled }
     }
 
     // MARK: - Private

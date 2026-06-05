@@ -21,6 +21,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 guard ConfigStore.shared.preferences.gesturesEnabled else { return false }
                 guard let bundleID = watcher?.frontmostBundleID else { return false }
                 return ConfigStore.shared.profiles.contains { $0.bundleID == bundleID && $0.enabled }
+                    || ConfigStore.shared.globalProfile.enabled
             }
         }
         monitor.onGestureDetected = { [weak watcher] gesture in
