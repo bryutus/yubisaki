@@ -90,7 +90,7 @@ final class KeyRecorderNSView: NSView {
 
     private func startBlink() {
         let timer = Timer(timeInterval: 0.5, repeats: true) { [weak self] _ in
-            DispatchQueue.main.async { [weak self] in
+            MainActor.assumeIsolated {
                 self?.blinkOn.toggle()
                 self?.needsDisplay = true
             }
