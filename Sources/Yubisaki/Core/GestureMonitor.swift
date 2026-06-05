@@ -63,6 +63,11 @@ final class GestureMonitor: @unchecked Sendable {
         guard let userInfo else { return Unmanaged.passRetained(event) }
         let monitor = Unmanaged<GestureMonitor>.fromOpaque(userInfo).takeUnretainedValue()
 
+        // cghidEventTap は magnify 以外の内部イベント（type 0xFFFFFFFF 等）も届くことがある。
+        // NSEvent(cgEvent:) に未知の type を渡すと NSInternalInconsistencyException が発生するため、
+        // CGEvent レベルで先にフィルタする。
+        guard type == .magnify else { return Unmanaged.passRetained(event) }
+
         guard let nsEvent = NSEvent(cgEvent: event),
               nsEvent.type == .magnify else {
             return Unmanaged.passRetained(event)
