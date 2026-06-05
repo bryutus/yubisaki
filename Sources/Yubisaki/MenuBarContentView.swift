@@ -6,6 +6,7 @@ extension Notification.Name {
 
 struct MenuBarContentView: View {
     private var configStore: ConfigStore = .shared
+    @Environment(\.openSettings) private var openSettings
 
     private var enabled: Bool { configStore.preferences.gesturesEnabled }
 
@@ -29,8 +30,9 @@ struct MenuBarContentView: View {
 
         Divider()
 
-        SettingsLink {
-            Text(L("menu.settings"))
+        Button(L("menu.settings")) {
+            NSApp.activate(ignoringOtherApps: true)
+            openSettings()
         }
         .keyboardShortcut(",", modifiers: .command)
 
