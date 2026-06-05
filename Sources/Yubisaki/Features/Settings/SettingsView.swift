@@ -45,6 +45,7 @@ struct SettingsView: View {
         }
         .frame(minWidth: 960, minHeight: 660)
         .background(SettingsWindowStyle())
+        .toolbar(removing: .sidebarToggle)
     }
 
     // MARK: - Sidebar
