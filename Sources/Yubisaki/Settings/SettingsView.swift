@@ -479,6 +479,10 @@ private struct GeneralTabView: View {
             accessibilityGranted = PermissionManager.isAccessibilityGranted
             inputMonitoringGranted = PermissionManager.isInputMonitoringGranted
         }
+        .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)) { _ in
+            accessibilityGranted = PermissionManager.isAccessibilityGranted
+            inputMonitoringGranted = PermissionManager.isInputMonitoringGranted
+        }
         .onChange(of: configStore.preferences) { old, new in
             configStore.savePreferences()
             if old.gesturesEnabled != new.gesturesEnabled {
