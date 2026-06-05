@@ -80,11 +80,13 @@
 "general.showInDock"            = "Show in Dock";
 "general.gesturesEnabled"       = "Gestures enabled";
 "general.gesturesEnabledHint"   = "Global on/off. Toggle anytime with ⌃⌥⌘G.";
+"general.section.gestures"      = "Gestures";
 "general.section.permissions"   = "Permissions";
 "general.accessibility"         = "Accessibility";
 "general.accessibilityHint"     = "yubisaki needs Accessibility access to send keyboard shortcuts.";
 "general.inputMonitoring"       = "Input Monitoring";
 "general.permissionGranted"     = "Granted";
+"general.permissionDenied"      = "Not Granted";
 "general.openSystemSettings"    = "Open System Settings…";
 "general.footer.help"           = "Help";
 "general.footer.privacy"        = "Privacy";

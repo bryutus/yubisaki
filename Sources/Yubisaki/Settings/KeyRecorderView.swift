@@ -13,11 +13,9 @@ struct KeyRecorderView: NSViewRepresentable {
     func updateNSView(_ nsView: KeyRecorderNSView, context: Context) {
         nsView.currentKeyCode = keyCode
         nsView.currentFlags = modifierFlags
-        let keyCodeBinding = $keyCode
-        let flagsBinding = $modifierFlags
         nsView.onCapture = { code, flags in
-            keyCodeBinding.wrappedValue = code
-            flagsBinding.wrappedValue = flags.rawValue
+            $keyCode.wrappedValue = code
+            $modifierFlags.wrappedValue = flags.rawValue
         }
         nsView.needsDisplay = true
     }
@@ -28,14 +26,24 @@ final class KeyRecorderNSView: NSView {
     var currentFlags: UInt64 = 0
     var onCapture: ((CGKeyCode, CGEventFlags) -> Void)?
 
-    private var isRecording = false {
-        didSet { needsDisplay = true }
-    }
+    private var isRecording = false { didSet { needsDisplay = true } }
+    private var pendingModifiers: NSEvent.ModifierFlags = [] { didSet { needsDisplay = true } }
+    nonisolated(unsafe) private var blinkTimer: Timer?
+    private var blinkOn = true
 
     override var acceptsFirstResponder: Bool { true }
-    override var intrinsicContentSize: NSSize { NSSize(width: 200, height: 28) }
+    override var intrinsicContentSize: NSSize { NSSize(width: 200, height: 26) }
+
+    private var clearButtonRect: NSRect {
+        NSRect(x: bounds.maxX - 22, y: (bounds.height - 14) / 2, width: 14, height: 14)
+    }
 
     override func mouseDown(with event: NSEvent) {
+        let point = convert(event.locationInWindow, from: nil)
+        if !isRecording && currentKeyCode != 0 && clearButtonRect.contains(point) {
+            onCapture?(0, CGEventFlags(rawValue: 0))
+            return
+        }
         if isRecording {
             window?.makeFirstResponder(nil)
         } else {
@@ -45,76 +53,178 @@ final class KeyRecorderNSView: NSView {
 
     override func becomeFirstResponder() -> Bool {
         guard super.becomeFirstResponder() else { return false }
+        pendingModifiers = []
         isRecording = true
+        startBlink()
         return true
     }
 
     override func resignFirstResponder() -> Bool {
         guard super.resignFirstResponder() else { return false }
         isRecording = false
+        pendingModifiers = []
+        stopBlink()
         return true
     }
 
+    override func flagsChanged(with event: NSEvent) {
+        guard isRecording else { return }
+        pendingModifiers = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+    }
+
     override func keyDown(with event: NSEvent) {
-        if event.keyCode == 53 { // ESC
+        if event.keyCode == 53 { // ESC — cancel, keep saved values
             window?.makeFirstResponder(nil)
             return
         }
         let flags = CGEventFlags(rawValue: UInt64(
             event.modifierFlags.intersection(.deviceIndependentFlagsMask).rawValue
         ))
-        let code = CGKeyCode(event.keyCode)
-        onCapture?(code, flags)
+        onCapture?(CGKeyCode(event.keyCode), flags)
         window?.makeFirstResponder(nil)
+    }
+
+    deinit {
+        blinkTimer?.invalidate()
+    }
+
+    private func startBlink() {
+        let timer = Timer(timeInterval: 0.5, repeats: true) { [weak self] _ in
+            DispatchQueue.main.async { [weak self] in
+                self?.blinkOn.toggle()
+                self?.needsDisplay = true
+            }
+        }
+        RunLoop.main.add(timer, forMode: .common)
+        blinkTimer = timer
+    }
+
+    private func stopBlink() {
+        blinkTimer?.invalidate()
+        blinkTimer = nil
+        blinkOn = true
+        needsDisplay = true
     }
 
     override func draw(_ dirtyRect: NSRect) {
         NSGraphicsContext.saveGraphicsState()
         defer { NSGraphicsContext.restoreGraphicsState() }
 
-        let rect = bounds.insetBy(dx: 1, dy: 1)
-        let path = NSBezierPath(roundedRect: rect, xRadius: 5, yRadius: 5)
+        let bgPath = NSBezierPath(roundedRect: bounds.insetBy(dx: 0.5, dy: 0.5), xRadius: 5, yRadius: 5)
+        NSColor.controlBackgroundColor.setFill()
+        bgPath.fill()
 
-        let bg: NSColor = isRecording
-            ? .controlAccentColor.withAlphaComponent(0.15)
-            : .controlBackgroundColor
-        bg.setFill()
-        path.fill()
+        let borderColor: NSColor = isRecording ? .controlAccentColor : .separatorColor
+        borderColor.setStroke()
+        bgPath.lineWidth = isRecording ? 1.5 : 0.5
+        bgPath.stroke()
 
-        let border: NSColor = isRecording ? .controlAccentColor : .separatorColor
-        border.setStroke()
-        path.lineWidth = isRecording ? 2 : 1
-        path.stroke()
+        let midY = bounds.midY
 
-        let text: String
-        let textColor: NSColor
-        if isRecording {
-            text = "録音中... (ESC でキャンセル)"
-            textColor = .controlAccentColor
-        } else if currentKeyCode == 0 {
-            text = "クリックして録音"
-            textColor = .placeholderTextColor
+        if isRecording && !pendingModifiers.isEmpty {
+            // State 3: modifier key pills + "+ ?" hint
+            var x: CGFloat = 8
+            for sym in modifierSymbols(for: pendingModifiers) {
+                x = drawPill(sym, x: x, midY: midY) + 3
+            }
+            let hint = NSAttributedString(string: "+ ?", attributes: [
+                .font: NSFont.systemFont(ofSize: 11),
+                .foregroundColor: NSColor.tertiaryLabelColor
+            ])
+            hint.draw(at: NSPoint(x: x + 2, y: midY - hint.size().height / 2))
+
+        } else if isRecording {
+            // State 2: blinking red dot + prompt
+            if blinkOn {
+                NSColor.systemRed.setFill()
+                NSBezierPath(ovalIn: NSRect(x: 8, y: midY - 3, width: 6, height: 6)).fill()
+            }
+            let label = NSAttributedString(string: L("shortcut.pressNewKey"), attributes: [
+                .font: NSFont.systemFont(ofSize: 11),
+                .foregroundColor: NSColor.secondaryLabelColor
+            ])
+            label.draw(at: NSPoint(x: 18, y: midY - label.size().height / 2))
+
+        } else if currentKeyCode != 0 {
+            // State 4: shortcut pills + × clear button
+            var x: CGFloat = 8
+            for part in shortcutParts() {
+                x = drawPill(part, x: x, midY: midY) + 3
+            }
+            drawClearButton()
+
         } else {
-            text = shortcutString(keyCode: currentKeyCode, flags: CGEventFlags(rawValue: currentFlags))
-            textColor = .labelColor
+            // State 1: italic placeholder
+            let baseFont = NSFont.systemFont(ofSize: 11)
+            let italicDescriptor = baseFont.fontDescriptor.withSymbolicTraits(.italic)
+            let italicFont = NSFont(descriptor: italicDescriptor, size: 11) ?? baseFont
+            let placeholder = NSAttributedString(string: L("shortcut.clickToRecord"), attributes: [
+                .font: italicFont,
+                .foregroundColor: NSColor.tertiaryLabelColor
+            ])
+            placeholder.draw(at: NSPoint(x: 8, y: midY - placeholder.size().height / 2))
         }
-
-        let attrs: [NSAttributedString.Key: Any] = [
-            .font: NSFont.systemFont(ofSize: 13),
-            .foregroundColor: textColor,
-        ]
-        let str = NSAttributedString(string: text, attributes: attrs)
-        let size = str.size()
-        str.draw(at: NSPoint(x: (bounds.width - size.width) / 2, y: (bounds.height - size.height) / 2))
     }
 
-    private func shortcutString(keyCode: CGKeyCode, flags: CGEventFlags) -> String {
+    @discardableResult
+    private func drawPill(_ text: String, x: CGFloat, midY: CGFloat) -> CGFloat {
+        let attrs: [NSAttributedString.Key: Any] = [
+            .font: NSFont.monospacedSystemFont(ofSize: 11, weight: .medium),
+            .foregroundColor: NSColor.labelColor
+        ]
+        let str = NSAttributedString(string: text, attributes: attrs)
+        let textSize = str.size()
+        let hPad: CGFloat = 5
+        let pillH: CGFloat = 18
+        let pillW = max(textSize.width + hPad * 2, pillH)
+        let pillRect = NSRect(x: x, y: midY - pillH / 2, width: pillW, height: pillH)
+
+        NSColor.tertiaryLabelColor.withAlphaComponent(0.15).setFill()
+        NSBezierPath(roundedRect: pillRect, xRadius: pillH / 2, yRadius: pillH / 2).fill()
+
+        NSColor.separatorColor.setStroke()
+        let borderPath = NSBezierPath(roundedRect: pillRect.insetBy(dx: 0.25, dy: 0.25), xRadius: pillH / 2, yRadius: pillH / 2)
+        borderPath.lineWidth = 0.5
+        borderPath.stroke()
+
+        str.draw(at: NSPoint(x: x + (pillW - textSize.width) / 2, y: midY - textSize.height / 2))
+        return x + pillW
+    }
+
+    private func drawClearButton() {
+        let rect = clearButtonRect
+        NSColor.tertiaryLabelColor.withAlphaComponent(0.35).setFill()
+        NSBezierPath(ovalIn: rect).fill()
+
+        let inset: CGFloat = 3.5
+        let crossPath = NSBezierPath()
+        crossPath.lineWidth = 1.4
+        crossPath.lineCapStyle = .round
+        crossPath.move(to: NSPoint(x: rect.minX + inset, y: rect.minY + inset))
+        crossPath.line(to: NSPoint(x: rect.maxX - inset, y: rect.maxY - inset))
+        crossPath.move(to: NSPoint(x: rect.maxX - inset, y: rect.minY + inset))
+        crossPath.line(to: NSPoint(x: rect.minX + inset, y: rect.maxY - inset))
+        NSColor.white.setStroke()
+        crossPath.stroke()
+    }
+
+    private func modifierSymbols(for flags: NSEvent.ModifierFlags) -> [String] {
+        var syms: [String] = []
+        if flags.contains(.control) { syms.append("⌃") }
+        if flags.contains(.option)  { syms.append("⌥") }
+        if flags.contains(.shift)   { syms.append("⇧") }
+        if flags.contains(.command) { syms.append("⌘") }
+        return syms
+    }
+
+    private func shortcutParts() -> [String] {
         var parts: [String] = []
-        if flags.contains(.maskControl) { parts.append("⌃") }
+        let flags = CGEventFlags(rawValue: currentFlags)
+        if flags.contains(.maskControl)   { parts.append("⌃") }
         if flags.contains(.maskAlternate) { parts.append("⌥") }
-        if flags.contains(.maskShift) { parts.append("⇧") }
-        if flags.contains(.maskCommand) { parts.append("⌘") }
-        parts.append(GestureBinding.keyCodeString(keyCode))
-        return parts.joined()
+        if flags.contains(.maskShift)     { parts.append("⇧") }
+        if flags.contains(.maskCommand)   { parts.append("⌘") }
+        parts.append(GestureBinding.keyCodeString(currentKeyCode))
+        return parts
     }
 }
