@@ -11,14 +11,8 @@ struct MenuBarContentView: View {
     private var enabled: Bool { configStore.preferences.gesturesEnabled }
 
     var body: some View {
-        Label {
-            Text(L(enabled ? "menu.status.running" : "menu.status.paused"))
-        } icon: {
-            Circle()
-                .fill(enabled ? Color.green : Color.orange)
-                .frame(width: 8, height: 8)
-        }
-        .disabled(true)
+        Text((enabled ? "🟢 " : "🟠 ") + L(enabled ? "menu.status.running" : "menu.status.paused"))
+            .disabled(true)
 
         Divider()
 
