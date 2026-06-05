@@ -28,9 +28,7 @@ final class KeyRecorderNSView: NSView {
 
     private var isRecording = false { didSet { needsDisplay = true } }
     private var pendingModifiers: NSEvent.ModifierFlags = [] { didSet { needsDisplay = true } }
-    private var savedKeyCode: CGKeyCode = 0
-    private var savedFlags: UInt64 = 0
-    private var blinkTimer: Timer?
+    nonisolated(unsafe) private var blinkTimer: Timer?
     private var blinkOn = true
 
     override var acceptsFirstResponder: Bool { true }
@@ -55,8 +53,6 @@ final class KeyRecorderNSView: NSView {
 
     override func becomeFirstResponder() -> Bool {
         guard super.becomeFirstResponder() else { return false }
-        savedKeyCode = currentKeyCode
-        savedFlags = currentFlags
         pendingModifiers = []
         isRecording = true
         startBlink()
@@ -88,13 +84,19 @@ final class KeyRecorderNSView: NSView {
         window?.makeFirstResponder(nil)
     }
 
+    deinit {
+        blinkTimer?.invalidate()
+    }
+
     private func startBlink() {
-        blinkTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
-            DispatchQueue.main.async {
+        let timer = Timer(timeInterval: 0.5, repeats: true) { [weak self] _ in
+            DispatchQueue.main.async { [weak self] in
                 self?.blinkOn.toggle()
                 self?.needsDisplay = true
             }
         }
+        RunLoop.main.add(timer, forMode: .common)
+        blinkTimer = timer
     }
 
     private func stopBlink() {
