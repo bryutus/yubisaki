@@ -20,6 +20,7 @@ private struct SettingsWindowStyle: NSViewRepresentable {
             if !window.styleMask.contains(.fullSizeContentView) {
                 window.styleMask.insert(.fullSizeContentView)
             }
+            window.toolbar = nil
         }
         return view
     }
@@ -45,7 +46,6 @@ struct SettingsView: View {
         }
         .frame(minWidth: 960, minHeight: 660)
         .background(SettingsWindowStyle())
-        .toolbar(removing: .sidebarToggle)
     }
 
     // MARK: - Sidebar
