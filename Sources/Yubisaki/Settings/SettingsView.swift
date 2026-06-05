@@ -136,7 +136,7 @@ struct SettingsView: View {
         guard let id = selectedBundleID else { return }
         configStore.profiles.removeAll { $0.bundleID == id }
         configStore.save()
-        selectedBundleID = nil
+        selectedBundleID = "global"
     }
 }
 
@@ -396,7 +396,7 @@ private struct BindingsFooter: View {
 
     private func addBinding() {
         let used = Set(profile.bindings.map(\.gesture))
-        let gesture = GestureType.allCases.first { !used.contains($0) } ?? .pinchIn
+        guard let gesture = GestureType.allCases.first(where: { !used.contains($0) }) else { return }
         let newBinding = GestureBinding(gesture: gesture, enabled: false)
         profile.bindings.append(newBinding)
         selectedBindingID = newBinding.id
