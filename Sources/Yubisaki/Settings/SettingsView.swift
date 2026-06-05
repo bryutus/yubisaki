@@ -60,6 +60,7 @@ struct SettingsView: View {
                 }
                 .buttonStyle(.plain)
                 .padding(6)
+                .accessibilityLabel("アプリを追加")
 
                 Button(action: removeSelected) {
                     Image(systemName: "minus")
@@ -67,16 +68,18 @@ struct SettingsView: View {
                 .buttonStyle(.plain)
                 .padding(6)
                 .disabled(selectedBundleID == nil || selectedBundleID == "global")
+                .accessibilityLabel("アプリを削除")
 
                 Spacer()
 
                 Button(action: { selectedTab = selectedTab == .general ? .gestures : .general }) {
                     Image(systemName: "gearshape")
-                        .font(.system(size: 11))
+                        .font(.caption)
                 }
                 .buttonStyle(.plain)
                 .padding(6)
                 .padding(.trailing, 4)
+                .accessibilityLabel("一般設定")
             }
             .padding(.leading, 4)
             .frame(height: 36)
@@ -163,12 +166,12 @@ private struct AppRowView: View {
         HStack(spacing: 8) {
             appIconView
             Text(appName)
-                .font(.system(size: 12, weight: .medium))
+                .font(.callout.weight(.medium))
                 .lineLimit(1)
             Spacer()
             if enabledCount > 0 {
                 Text("\(enabledCount)")
-                    .font(.system(size: 11, weight: .medium))
+                    .font(.caption.weight(.medium))
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
             }
@@ -185,10 +188,10 @@ private struct AppRowView: View {
         } else {
             ZStack {
                 RoundedRectangle(cornerRadius: 4)
-                    .fill(Color(nsColor: .tertiaryLabelColor).opacity(0.25))
+                    .fill(.quaternary)
                     .frame(width: 20, height: 20)
                 Image(systemName: "hand.draw")
-                    .font(.system(size: 10))
+                    .font(.caption2)
                     .foregroundStyle(.secondary)
             }
         }
@@ -234,14 +237,14 @@ private struct BindingsView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 10))
                 .overlay(
                     RoundedRectangle(cornerRadius: 10)
-                        .stroke(Color(nsColor: .separatorColor).opacity(0.6), lineWidth: 0.5)
+                        .stroke(.separator.opacity(0.6), lineWidth: 0.5)
                 )
             }
             .padding(.horizontal, 16)
             .padding(.top, 16)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(nsColor: .windowBackgroundColor))
+        .background(.background)
         .safeAreaInset(edge: .bottom, spacing: 0) {
             BindingsFooter(profile: $profile, selectedBindingID: $selectedBindingID)
                 .padding(.horizontal, 8)
@@ -273,10 +276,10 @@ private struct AppHeaderView: View {
         HStack(spacing: 12) {
             appIconView
             Text(appName)
-                .font(.system(size: 15, weight: .semibold))
+                .font(.headline)
             Spacer()
             Text(toggleLabel)
-                .font(.system(size: 12))
+                .font(.callout)
             Toggle("", isOn: $enabled)
                 .toggleStyle(.switch)
                 .labelsHidden()
@@ -294,10 +297,10 @@ private struct AppHeaderView: View {
         } else {
             ZStack {
                 RoundedRectangle(cornerRadius: 10)
-                    .fill(Color(nsColor: .tertiaryLabelColor).opacity(0.15))
+                    .fill(.quaternary)
                     .frame(width: 44, height: 44)
                 Image(systemName: "hand.draw")
-                    .font(.system(size: 20))
+                    .font(.title3)
                     .foregroundStyle(.secondary)
             }
         }
@@ -309,7 +312,7 @@ private struct AppHeaderView: View {
 private struct ColumnHeaderRow: View {
     var body: some View {
         HStack(spacing: 12) {
-            Color.clear.frame(width: 14, height: 1) // checkbox space
+            Color.clear.frame(width: 14, height: 1)
             Text(L("gestures.column.gesture"))
                 .frame(width: 200, alignment: .leading)
             Text(L("gestures.column.shortcut"))
@@ -317,7 +320,7 @@ private struct ColumnHeaderRow: View {
             Text(L("gestures.column.note"))
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .font(.system(size: 10, weight: .bold))
+        .font(.caption2.weight(.bold))
         .tracking(0.3)
         .foregroundStyle(.secondary)
         .padding(.horizontal, 16)
@@ -364,7 +367,7 @@ private struct BindingRowView: View {
 
             TextField(L("gestures.column.note"), text: $noteText)
                 .textFieldStyle(.plain)
-                .font(.system(size: 12))
+                .font(.callout)
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity)
                 .focused($noteIsFocused)
@@ -395,11 +398,13 @@ private struct BindingsFooter: View {
             Button(action: addBinding) { Image(systemName: "plus") }
                 .buttonStyle(.plain)
                 .padding(6)
+                .accessibilityLabel("バインディングを追加")
 
             Button(action: deleteSelected) { Image(systemName: "minus") }
                 .buttonStyle(.plain)
                 .padding(6)
                 .disabled(selectedBindingID == nil)
+                .accessibilityLabel("バインディングを削除")
 
             Spacer()
         }
@@ -465,27 +470,27 @@ private struct GeneralTabView: View {
 
                 HStack(spacing: 6) {
                     Text("yubisaki · \(appVersion)")
-                        .font(.system(size: 11, design: .monospaced))
+                        .font(.caption.monospaced())
                         .foregroundStyle(.tertiary)
                     Spacer()
                     Button(L("general.footer.help")) {}
                         .buttonStyle(.link)
-                        .font(.system(size: 11))
-                    Text("·").foregroundStyle(.tertiary).font(.system(size: 11))
+                        .font(.caption)
+                    Text("·").foregroundStyle(.tertiary).font(.caption)
                     Button(L("general.footer.privacy")) {}
                         .buttonStyle(.link)
-                        .font(.system(size: 11))
-                    Text("·").foregroundStyle(.tertiary).font(.system(size: 11))
+                        .font(.caption)
+                    Text("·").foregroundStyle(.tertiary).font(.caption)
                     Button(L("general.footer.reset")) {}
                         .buttonStyle(.link)
-                        .font(.system(size: 11))
+                        .font(.caption)
                 }
                 .padding(.horizontal, 24)
                 .padding(.top, 16)
                 .padding(.bottom, 28)
             }
         }
-        .background(Color(nsColor: .windowBackgroundColor))
+        .background(.background)
         .onAppear {
             accessibilityGranted = PermissionManager.isAccessibilityGranted
             inputMonitoringGranted = PermissionManager.isInputMonitoringGranted
@@ -511,7 +516,7 @@ private struct FormGroupView<Content: View>: View {
         VStack(alignment: .leading, spacing: 0) {
             if let title {
                 Text(title)
-                    .font(.system(size: 11, weight: .bold))
+                    .font(.caption.weight(.bold))
                     .tracking(0.3)
                     .foregroundStyle(.secondary)
                     .padding(.bottom, 6)
@@ -523,7 +528,7 @@ private struct FormGroupView<Content: View>: View {
             .clipShape(RoundedRectangle(cornerRadius: 10))
             .overlay(
                 RoundedRectangle(cornerRadius: 10)
-                    .stroke(Color(nsColor: .separatorColor).opacity(0.6), lineWidth: 0.5)
+                    .stroke(.separator.opacity(0.6), lineWidth: 0.5)
             )
         }
         .padding(.horizontal, 20)
@@ -539,10 +544,10 @@ private struct ToggleRowView: View {
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
             VStack(alignment: .leading, spacing: 2) {
-                Text(label).font(.system(size: 13))
+                Text(label).font(.body)
                 if let hint {
                     Text(hint)
-                        .font(.system(size: 11))
+                        .font(.caption)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -566,14 +571,14 @@ private struct PermissionRowView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 12) {
-                Text(label).font(.system(size: 13))
+                Text(label).font(.body)
                 Spacer()
                 HStack(spacing: 6) {
                     Circle()
                         .fill(granted ? Color.green : Color.orange)
                         .frame(width: 8, height: 8)
                     Text(granted ? L("general.permissionGranted") : L("general.permissionDenied"))
-                        .font(.system(size: 12))
+                        .font(.callout)
                         .foregroundStyle(.secondary)
                     if showOpenButton {
                         Button(L("general.openSystemSettings")) {
@@ -588,7 +593,7 @@ private struct PermissionRowView: View {
             .padding(.vertical, 11)
             if let hint {
                 Text(hint)
-                    .font(.system(size: 11))
+                    .font(.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
                     .padding(.horizontal, 16)
