@@ -332,6 +332,9 @@ private struct BindingRowView: View {
     var isSelected: Bool
     var onSelect: () -> Void
 
+    @State private var noteText: String = ""
+    @FocusState private var noteIsFocused: Bool
+
     var body: some View {
         HStack(spacing: 12) {
             Toggle("", isOn: $binding.enabled)
@@ -359,17 +362,25 @@ private struct BindingRowView: View {
             KeyRecorderView(keyCode: $binding.keyCode, modifierFlags: $binding.modifierFlags)
                 .frame(maxWidth: .infinity, minHeight: 26, maxHeight: 28)
 
-            TextField(L("gestures.column.note"), text: $binding.note)
+            TextField(L("gestures.column.note"), text: $noteText)
                 .textFieldStyle(.plain)
                 .font(.system(size: 12))
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity)
+                .focused($noteIsFocused)
+                .onChange(of: noteIsFocused) { _, focused in
+                    if !focused { binding.note = noteText }
+                }
+                .onChange(of: binding.note) { _, new in
+                    if !noteIsFocused { noteText = new }
+                }
         }
         .padding(.vertical, 6)
         .padding(.horizontal, 16)
         .background(isSelected ? Color.accentColor.opacity(0.12) : Color.clear)
         .contentShape(Rectangle())
         .simultaneousGesture(TapGesture().onEnded { onSelect() })
+        .onAppear { noteText = binding.note }
     }
 }
 
