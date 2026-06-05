@@ -1,5 +1,4 @@
 import Foundation
-import Combine
 
 struct GlobalPreferences: Codable, Sendable, Equatable {
     var gesturesEnabled: Bool = true
@@ -23,12 +22,13 @@ struct GlobalPreferences: Codable, Sendable, Equatable {
     init() {}
 }
 
-final class ConfigStore: ObservableObject, @unchecked Sendable {
+@Observable
+final class ConfigStore: @unchecked Sendable {
     static let shared = ConfigStore()
 
-    @Published var globalProfile = AppProfile(bundleID: "global")
-    @Published var profiles: [AppProfile] = []
-    @Published var preferences = GlobalPreferences()
+    var globalProfile = AppProfile(bundleID: "global")
+    var profiles: [AppProfile] = []
+    var preferences = GlobalPreferences()
 
     private var baseURL: URL {
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!

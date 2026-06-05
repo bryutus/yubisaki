@@ -8,7 +8,7 @@ enum SettingsTab: String, CaseIterable {
 }
 
 struct SettingsView: View {
-    @ObservedObject var configStore: ConfigStore
+    @Bindable var configStore: ConfigStore
     @State private var selectedTab: SettingsTab = .gestures
     @State private var selectedBundleID: String? = "global"
 
@@ -425,7 +425,7 @@ private struct BindingsFooter: View {
 // MARK: - General Tab
 
 private struct GeneralTabView: View {
-    @ObservedObject var configStore: ConfigStore
+    @Bindable var configStore: ConfigStore
     @State private var accessibilityGranted = false
     @State private var inputMonitoringGranted = false
 

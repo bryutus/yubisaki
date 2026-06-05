@@ -5,7 +5,7 @@ extension Notification.Name {
 }
 
 struct MenuBarContentView: View {
-    @ObservedObject private var configStore = ConfigStore.shared
+    private var configStore: ConfigStore = .shared
 
     private var enabled: Bool { configStore.preferences.gesturesEnabled }
 
