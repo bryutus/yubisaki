@@ -7,6 +7,25 @@ enum SettingsTab: String, CaseIterable {
     case general = "一般"
 }
 
+// Configures the Settings window to match the macOS System Settings visual style:
+// hidden title bar + transparent titlebar + full-size content view.
+// Applied via .background() so the NSView can reach its containing NSWindow.
+private struct SettingsWindowStyle: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView()
+        DispatchQueue.main.async {
+            guard let window = view.window else { return }
+            window.titleVisibility = .hidden
+            window.titlebarAppearsTransparent = true
+            if !window.styleMask.contains(.fullSizeContentView) {
+                window.styleMask.insert(.fullSizeContentView)
+            }
+        }
+        return view
+    }
+    func updateNSView(_ nsView: NSView, context: Context) {}
+}
+
 struct SettingsView: View {
     @Bindable var configStore: ConfigStore
     @State private var selectedTab: SettingsTab = .gestures
@@ -25,6 +44,7 @@ struct SettingsView: View {
             }
         }
         .frame(minWidth: 960, minHeight: 660)
+        .background(SettingsWindowStyle())
     }
 
     // MARK: - Sidebar
