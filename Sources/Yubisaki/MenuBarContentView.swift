@@ -8,24 +8,15 @@ struct MenuBarContentView: View {
     private var configStore: ConfigStore = .shared
     @Environment(\.openSettings) private var openSettings
 
-    private var enabled: Bool { configStore.preferences.gesturesEnabled }
-
     var body: some View {
-        Label {
-            Text(L(enabled ? "menu.status.running" : "menu.status.paused"))
-        } icon: {
-            Image(systemName: "circle.fill")
-                .foregroundStyle(enabled ? Color(nsColor: .systemGreen) : Color(nsColor: .systemOrange))
-        }
-        .disabled(true)
-
-        Divider()
-
-        Button(L(enabled ? "menu.pause" : "menu.resume")) {
-            configStore.preferences.gesturesEnabled.toggle()
-            configStore.savePreferences()
-            NotificationCenter.default.post(name: .gesturesEnabledDidChange, object: nil)
-        }
+        Toggle(L("general.gesturesEnabled"), isOn: Binding(
+            get: { configStore.preferences.gesturesEnabled },
+            set: {
+                configStore.preferences.gesturesEnabled = $0
+                configStore.savePreferences()
+                NotificationCenter.default.post(name: .gesturesEnabledDidChange, object: nil)
+            }
+        ))
 
         Divider()
 
