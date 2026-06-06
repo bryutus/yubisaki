@@ -14,34 +14,58 @@ enum SettingsTab: String, CaseIterable {
 // Applied via .background() so the NSView can reach its containing NSWindow.
 private struct SettingsWindowStyle: NSViewRepresentable {
     func makeNSView(context: Context) -> NSView {
-        let view = WindowObservingView()
-        view.onAttachToWindow = { Self.configure($0) }
-        return view
+        WindowConfiguringView()
     }
 
+    // titleVisibility is non-structural and safe on updates; the heavier toolbar/styleMask
+    // changes happen once, deferred, inside WindowConfiguringView. The sidebar-toggle removal
+    // is re-scheduled on every update because SwiftUI re-adds the item when the view rebuilds.
     func updateNSView(_ nsView: NSView, context: Context) {
-        if let window = nsView.window { Self.configure(window) }
+        nsView.window?.titleVisibility = .hidden
+        (nsView as? WindowConfiguringView)?.scheduleSidebarToggleRemoval()
     }
 
-    @MainActor
-    private static func configure(_ window: NSWindow) {
-        window.titleVisibility = .hidden
-        window.titlebarAppearsTransparent = true
-        window.styleMask.insert(.fullSizeContentView)
-        if window.toolbar == nil {
-            window.toolbar = NSToolbar()
-        }
-        window.toolbarStyle = .unified
-        window.titlebarSeparatorStyle = .none
-    }
+    // Applies the window chrome once the view joins a window. styleMask/toolbar changes
+    // rebuild the window's view hierarchy, so they MUST be deferred out of the current
+    // layout/transaction pass — doing them inline throws during the CATransaction flush.
+    private final class WindowConfiguringView: NSView {
+        private var didConfigure = false
 
-    // An NSView whose only job is to surface its containing NSWindow once it joins the
-    // hierarchy — avoids racing on `view.window` from a dispatched closure.
-    private final class WindowObservingView: NSView {
-        var onAttachToWindow: ((NSWindow) -> Void)?
         override func viewDidMoveToWindow() {
             super.viewDidMoveToWindow()
-            if let window { onAttachToWindow?(window) }
+            guard window != nil, !didConfigure else { return }
+            didConfigure = true
+            DispatchQueue.main.async { [weak self] in
+                MainActor.assumeIsolated { self?.applyChrome() }
+            }
+        }
+
+        func scheduleSidebarToggleRemoval() {
+            DispatchQueue.main.async { [weak self] in
+                MainActor.assumeIsolated { self?.removeSidebarToggle() }
+            }
+        }
+
+        private func applyChrome() {
+            guard let window else { return }
+            window.titleVisibility = .hidden
+            window.titlebarAppearsTransparent = true
+            window.styleMask.insert(.fullSizeContentView)
+            // A unified toolbar keeps the titlebar tall (lowering the traffic lights) even
+            // with no visible items. We reuse SwiftUI's NavigationSplitView toolbar.
+            window.toolbarStyle = .unified
+            window.titlebarSeparatorStyle = .none
+            removeSidebarToggle()
+        }
+
+        // SwiftUI's NavigationSplitView injects a sidebar-toggle toolbar item that
+        // .toolbar(removing: .sidebarToggle) fails to suppress here, so strip it directly.
+        private func removeSidebarToggle() {
+            guard let toolbar = window?.toolbar else { return }
+            for index in toolbar.items.indices.reversed()
+            where toolbar.items[index].itemIdentifier.rawValue.contains("toggleSidebar") {
+                toolbar.removeItem(at: index)
+            }
         }
     }
 }
