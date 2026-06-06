@@ -42,7 +42,7 @@ struct BindingsView: View {
                 )
             }
             .padding(.horizontal, 16)
-            .padding(.top, 16)
+            .padding(.top, 2)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(red: 236/255, green: 237/255, blue: 236/255))
@@ -86,7 +86,7 @@ private struct AppHeaderView: View {
                 .labelsHidden()
         }
         .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+        .padding(.bottom, 12)
     }
 
     @ViewBuilder

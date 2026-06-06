@@ -13,7 +13,7 @@ struct GeneralSettingsView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                FormGroupView {
+                FormGroupView(topPadding: 2) {
                     ToggleRowView(label: L("general.launchAtLogin"), hint: L("general.launchAtLoginHint"), isOn: $configStore.preferences.launchAtLogin)
                     Color(nsColor: .separatorColor).frame(height: 0.5).padding(.horizontal, 16)
                     ToggleRowView(label: L("general.showMenuBar"), hint: L("general.showMenuBarHint"), isOn: $configStore.preferences.showMenuBar)
@@ -84,6 +84,7 @@ struct GeneralSettingsView: View {
 
 private struct FormGroupView<Content: View>: View {
     var title: String? = nil
+    var topPadding: CGFloat = 20
     @ViewBuilder let content: () -> Content
 
     var body: some View {
@@ -106,7 +107,7 @@ private struct FormGroupView<Content: View>: View {
             )
         }
         .padding(.horizontal, 20)
-        .padding(.top, 20)
+        .padding(.top, topPadding)
     }
 }
 
