@@ -24,7 +24,9 @@ private struct SettingsWindowStyle: NSViewRepresentable {
         }
         return view
     }
-    func updateNSView(_ nsView: NSView, context: Context) {}
+    func updateNSView(_ nsView: NSView, context: Context) {
+        nsView.window?.titleVisibility = .hidden
+    }
 }
 
 struct SettingsView: View {
@@ -37,13 +39,23 @@ struct SettingsView: View {
             appList
                 .navigationSplitViewColumnWidth(min: 200, ideal: 220)
         } detail: {
-            switch selectedTab {
-            case .gestures:
-                detailPane
-            case .general:
-                GeneralSettingsView(configStore: configStore)
+            ZStack {
+                switch selectedTab {
+                case .gestures:
+                    detailPane
+                case .general:
+                    GeneralSettingsView(configStore: configStore)
+                }
+            }
+            .safeAreaInset(edge: .top, spacing: 0) {
+                Text(selectedTab.rawValue)
+                    .font(.title3.weight(.semibold))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 20)
+                    .frame(height: 28)
             }
         }
+        .navigationTitle("")
         .frame(minWidth: 960, minHeight: 660)
         .background(SettingsWindowStyle())
     }
