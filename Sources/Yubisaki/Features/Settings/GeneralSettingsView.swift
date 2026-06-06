@@ -13,11 +13,11 @@ struct GeneralSettingsView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                FormGroupView {
+                FormGroupView(topPadding: 2) {
                     ToggleRowView(label: L("general.launchAtLogin"), hint: L("general.launchAtLoginHint"), isOn: $configStore.preferences.launchAtLogin)
-                    Divider()
+                    Color(nsColor: .separatorColor).frame(height: 0.5).padding(.horizontal, 16)
                     ToggleRowView(label: L("general.showMenuBar"), hint: L("general.showMenuBarHint"), isOn: $configStore.preferences.showMenuBar)
-                    Divider()
+                    Color(nsColor: .separatorColor).frame(height: 0.5).padding(.horizontal, 16)
                     ToggleRowView(label: L("general.showInDock"), isOn: $configStore.preferences.showInDock)
                 }
 
@@ -32,7 +32,7 @@ struct GeneralSettingsView: View {
                         granted: accessibilityGranted,
                         showOpenButton: true
                     )
-                    Divider()
+                    Color(nsColor: .separatorColor).frame(height: 0.5).padding(.horizontal, 16)
                     PermissionRowView(
                         label: L("general.inputMonitoring"),
                         granted: inputMonitoringGranted,
@@ -62,7 +62,7 @@ struct GeneralSettingsView: View {
                 .padding(.bottom, 28)
             }
         }
-        .background(.background)
+        .background(Color(red: 236/255, green: 237/255, blue: 236/255))
         .onAppear {
             accessibilityGranted = PermissionManager.isAccessibilityGranted
             inputMonitoringGranted = PermissionManager.isInputMonitoringGranted
@@ -84,21 +84,22 @@ struct GeneralSettingsView: View {
 
 private struct FormGroupView<Content: View>: View {
     var title: String? = nil
+    var topPadding: CGFloat = 20
     @ViewBuilder let content: () -> Content
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             if let title {
                 Text(title)
-                    .font(.caption.weight(.bold))
-                    .tracking(0.3)
-                    .foregroundStyle(.secondary)
+                    .font(.callout.weight(.semibold))
+                    .foregroundStyle(.primary)
+                    .padding(.leading, 16)
                     .padding(.bottom, 6)
             }
             VStack(spacing: 0) {
                 content()
             }
-            .background(Color(nsColor: .controlBackgroundColor))
+            .background(Color(red: 232/255, green: 233/255, blue: 232/255))
             .clipShape(RoundedRectangle(cornerRadius: 10))
             .overlay(
                 RoundedRectangle(cornerRadius: 10)
@@ -106,7 +107,7 @@ private struct FormGroupView<Content: View>: View {
             )
         }
         .padding(.horizontal, 20)
-        .padding(.top, 20)
+        .padding(.top, topPadding)
     }
 }
 

@@ -16,7 +16,7 @@ struct BindingsView: View {
 
                 VStack(spacing: 0) {
                     ColumnHeaderRow()
-                    Divider()
+                    Color(nsColor: .separatorColor).frame(height: 0.5).padding(.horizontal, 16)
                     if profile.bindings.isEmpty {
                         Text("ジェスチャーバインディングがありません")
                             .foregroundStyle(.secondary)
@@ -29,12 +29,12 @@ struct BindingsView: View {
                                 isSelected: selectedBindingID == binding.id,
                                 onSelect: { selectedBindingID = binding.id }
                             )
-                            Divider()
+                            Color(nsColor: .separatorColor).frame(height: 0.5).padding(.horizontal, 16)
                         }
                     }
                 }
                 .opacity(profile.enabled ? 1.0 : 0.55)
-                .background(Color(nsColor: .controlBackgroundColor))
+                .background(Color(red: 232/255, green: 233/255, blue: 232/255))
                 .clipShape(RoundedRectangle(cornerRadius: 10))
                 .overlay(
                     RoundedRectangle(cornerRadius: 10)
@@ -42,10 +42,10 @@ struct BindingsView: View {
                 )
             }
             .padding(.horizontal, 16)
-            .padding(.top, 16)
+            .padding(.top, 2)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(.background)
+        .background(Color(red: 236/255, green: 237/255, blue: 236/255))
         .safeAreaInset(edge: .bottom, spacing: 0) {
             BindingsFooter(profile: $profile, selectedBindingID: $selectedBindingID)
                 .padding(.horizontal, 8)
@@ -86,7 +86,7 @@ private struct AppHeaderView: View {
                 .labelsHidden()
         }
         .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+        .padding(.bottom, 12)
     }
 
     @ViewBuilder
