@@ -7,25 +7,42 @@ enum SettingsTab: String, CaseIterable {
     case general = "一般"
 }
 
-// Configures the Settings window to match the macOS System Settings visual style:
-// hidden title bar + transparent titlebar + full-size content view.
+// Configures the Settings window to match the macOS System Settings / Xcode visual style.
+// A unified toolbar makes the titlebar taller, so AppKit centers the traffic-light buttons
+// lower (the same mechanism Xcode and Finder use). Combined with a transparent titlebar and
+// full-size content view, the sidebar background shows through behind the buttons.
 // Applied via .background() so the NSView can reach its containing NSWindow.
 private struct SettingsWindowStyle: NSViewRepresentable {
     func makeNSView(context: Context) -> NSView {
-        let view = NSView()
-        DispatchQueue.main.async {
-            guard let window = view.window else { return }
-            window.titleVisibility = .hidden
-            window.titlebarAppearsTransparent = true
-            if !window.styleMask.contains(.fullSizeContentView) {
-                window.styleMask.insert(.fullSizeContentView)
-            }
-            window.toolbar = nil
-        }
+        let view = WindowObservingView()
+        view.onAttachToWindow = { Self.configure($0) }
         return view
     }
+
     func updateNSView(_ nsView: NSView, context: Context) {
-        nsView.window?.titleVisibility = .hidden
+        if let window = nsView.window { Self.configure(window) }
+    }
+
+    @MainActor
+    private static func configure(_ window: NSWindow) {
+        window.titleVisibility = .hidden
+        window.titlebarAppearsTransparent = true
+        window.styleMask.insert(.fullSizeContentView)
+        if window.toolbar == nil {
+            window.toolbar = NSToolbar()
+        }
+        window.toolbarStyle = .unified
+        window.titlebarSeparatorStyle = .none
+    }
+
+    // An NSView whose only job is to surface its containing NSWindow once it joins the
+    // hierarchy — avoids racing on `view.window` from a dispatched closure.
+    private final class WindowObservingView: NSView {
+        var onAttachToWindow: ((NSWindow) -> Void)?
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            if let window { onAttachToWindow?(window) }
+        }
     }
 }
 
@@ -82,9 +99,6 @@ struct SettingsView: View {
             if selectedTab == .general {
                 selectedTab = .gestures
             }
-        }
-        .safeAreaInset(edge: .top, spacing: 0) {
-            Color.clear.frame(height: 28)
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             HStack(spacing: 2) {
