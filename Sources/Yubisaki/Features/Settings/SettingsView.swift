@@ -75,6 +75,10 @@ struct SettingsView: View {
     @State private var selectedTab: SettingsTab = .gestures
     @State private var selectedBundleID: String? = "global"
 
+    // Height of the unified titlebar; used to vertically center the tab title with the
+    // traffic-light buttons.
+    private let titlebarHeight: CGFloat = 50
+
     var body: some View {
         NavigationSplitView {
             appList
@@ -88,12 +92,15 @@ struct SettingsView: View {
                     GeneralSettingsView(configStore: configStore)
                 }
             }
-            .safeAreaInset(edge: .top, spacing: 0) {
+            .overlay(alignment: .topLeading) {
+                // Sit the title in the titlebar band so its vertical center lines up with the
+                // traffic-light buttons. The frame height matches the unified titlebar, and
+                // ignoring the top safe area lets it rise into that band.
                 Text(selectedTab.rawValue)
                     .font(.title3.weight(.semibold))
-                    .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, 20)
-                    .frame(height: 28)
+                    .frame(maxWidth: .infinity, minHeight: titlebarHeight, alignment: .leading)
+                    .ignoresSafeArea(.container, edges: .top)
             }
         }
         .navigationTitle("")
