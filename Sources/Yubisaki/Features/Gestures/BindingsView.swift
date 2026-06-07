@@ -5,6 +5,9 @@ struct BindingsView: View {
     @Binding var profile: AppProfile
     @State private var selectedBindingID: UUID?
 
+    // 既に割り当て済みのジェスチャー。Picker で重複選択を無効化するのに使う。
+    private var usedGestures: Set<GestureType> { Set(profile.bindings.map(\.gesture)) }
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
@@ -26,6 +29,7 @@ struct BindingsView: View {
                         ForEach($profile.bindings) { $binding in
                             BindingRowView(
                                 binding: $binding,
+                                usedGestures: usedGestures,
                                 isSelected: selectedBindingID == binding.id,
                                 onSelect: { selectedBindingID = binding.id }
                             )
@@ -133,6 +137,7 @@ private struct ColumnHeaderRow: View {
 
 private struct BindingRowView: View {
     @Binding var binding: GestureBinding
+    var usedGestures: Set<GestureType>
     var isSelected: Bool
     var onSelect: () -> Void
 
@@ -155,6 +160,8 @@ private struct BindingRowView: View {
                         ) { gesture in
                             Label(gesture.displayName, systemImage: gesture.sfSymbol)
                                 .tag(gesture)
+                                // 自分の選択以外で、他バインディングが使用中のものは選べない
+                                .disabled(gesture != binding.gesture && usedGestures.contains(gesture))
                         }
                     }
                 }
