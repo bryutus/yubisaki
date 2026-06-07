@@ -1,4 +1,13 @@
 import Foundation
+import os
+
+/// ジェスチャー判定ホットパス（CGEventTap スレッド）から読むための最小スナップショット。
+/// `ConfigStore` の `@Observable` 状態には触れず、これだけをロック越しに参照する。
+struct GestureSnapshot: Sendable {
+    var gesturesEnabled = true
+    var enabledBundleIDs: Set<String> = []
+    var globalEnabled = false
+}
 
 struct GlobalPreferences: Codable, Sendable, Equatable {
     var gesturesEnabled: Bool = true
@@ -22,6 +31,12 @@ struct GlobalPreferences: Codable, Sendable, Equatable {
     init() {}
 }
 
+/// 並行アクセス方針:
+/// - `@Observable` な状態（`globalProfile` / `profiles` / `preferences`）はメインスレッド専用
+///   （SwiftUI と `AppDelegate`）。これらをオフメインから読み書きしてはならない。
+/// - CGEventTap スレッドなどメイン外から必要な値は `gestureSnapshot()` 経由でのみ参照する。
+///   スナップショットは `OSAllocatedUnfairLock` で保護され、状態更新時に `refreshGestureSnapshot()`
+///   で再生成される。この2点で `@unchecked Sendable` の安全性を担保する。
 @Observable
 final class ConfigStore: @unchecked Sendable {
     static let shared = ConfigStore()
@@ -29,6 +44,24 @@ final class ConfigStore: @unchecked Sendable {
     var globalProfile = AppProfile(bundleID: "global")
     var profiles: [AppProfile] = []
     var preferences = GlobalPreferences()
+
+    @ObservationIgnored
+    private let gestureSnapshotLock = OSAllocatedUnfairLock(initialState: GestureSnapshot())
+
+    /// メイン外（CGEventTap スレッド）から安全に読めるジェスチャー判定用スナップショット。
+    func gestureSnapshot() -> GestureSnapshot {
+        gestureSnapshotLock.withLock { $0 }
+    }
+
+    /// 現在のメインスレッド状態からスナップショットを作り直す。状態変更後にメインから呼ぶ。
+    private func refreshGestureSnapshot() {
+        let snapshot = GestureSnapshot(
+            gesturesEnabled: preferences.gesturesEnabled,
+            enabledBundleIDs: Set(profiles.filter(\.enabled).map(\.bundleID)),
+            globalEnabled: globalProfile.enabled
+        )
+        gestureSnapshotLock.withLock { $0 = snapshot }
+    }
 
     private var baseURL: URL {
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
@@ -43,15 +76,18 @@ final class ConfigStore: @unchecked Sendable {
         loadProfiles()
         loadPreferences()
         loadGlobalProfile()
+        refreshGestureSnapshot()
     }
 
     func save() {
         saveProfiles()
         savePreferences()
         saveGlobalProfile()
+        refreshGestureSnapshot()
     }
 
     func savePreferences() {
+        refreshGestureSnapshot()
         guard let data = try? JSONEncoder().encode(preferences) else { return }
         try? data.write(to: preferencesURL, options: .atomic)
     }
