@@ -58,6 +58,9 @@
 "sidebar.section.system"       = "System";
 "sidebar.section.applications" = "Applications";
 "sidebar.allApps"              = "All Applications";
+"sidebar.addApp"               = "Add app";
+"sidebar.removeApp"            = "Remove app";
+"sidebar.generalSettings"      = "General settings";
 
 /* Gestures Tab */
 "gestures.enabledForApp"    = "Enabled for this app";

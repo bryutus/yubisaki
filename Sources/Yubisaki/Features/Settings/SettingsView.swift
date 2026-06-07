@@ -138,7 +138,7 @@ struct SettingsView: View {
                 }
                 .buttonStyle(.plain)
                 .padding(6)
-                .accessibilityLabel("アプリを追加")
+                .accessibilityLabel(L("sidebar.addApp"))
 
                 Button(action: removeSelected) {
                     Image(systemName: "minus")
@@ -146,7 +146,7 @@ struct SettingsView: View {
                 .buttonStyle(.plain)
                 .padding(6)
                 .disabled(selectedBundleID == nil || selectedBundleID == "global")
-                .accessibilityLabel("アプリを削除")
+                .accessibilityLabel(L("sidebar.removeApp"))
 
                 Spacer()
 
@@ -157,7 +157,7 @@ struct SettingsView: View {
                 .buttonStyle(.plain)
                 .padding(6)
                 .padding(.trailing, 4)
-                .accessibilityLabel("一般設定")
+                .accessibilityLabel(L("sidebar.generalSettings"))
             }
             .padding(.leading, 4)
             .frame(height: 36)

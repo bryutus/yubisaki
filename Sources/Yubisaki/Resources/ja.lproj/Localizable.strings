@@ -58,6 +58,9 @@
 "sidebar.section.system"       = "システム";
 "sidebar.section.applications" = "アプリケーション";
 "sidebar.allApps"              = "すべてのアプリ";
+"sidebar.addApp"               = "アプリを追加";
+"sidebar.removeApp"            = "アプリを削除";
+"sidebar.generalSettings"      = "一般設定";
 
 /* Gestures Tab */
 "gestures.enabledForApp"    = "このアプリで有効";
