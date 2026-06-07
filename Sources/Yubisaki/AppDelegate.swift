@@ -15,12 +15,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let monitor = GestureMonitor()
         monitor.shouldHandleGesture = { [weak watcher] in
-            DispatchQueue.main.sync {
-                guard ConfigStore.shared.preferences.gesturesEnabled else { return false }
-                guard let bundleID = watcher?.frontmostBundleID else { return false }
-                return ConfigStore.shared.profiles.contains { $0.bundleID == bundleID && $0.enabled }
-                    || ConfigStore.shared.globalProfile.enabled
-            }
+            // CGEventTap スレッドから呼ばれる。メインへ同期せず、ロック保護のスナップショットを読む。
+            let snapshot = ConfigStore.shared.gestureSnapshot()
+            guard snapshot.gesturesEnabled else { return false }
+            guard let bundleID = watcher?.frontmostBundleID else { return false }
+            return snapshot.enabledBundleIDs.contains(bundleID) || snapshot.globalEnabled
         }
         monitor.onGestureDetected = { [weak watcher] gesture in
             guard let bundleID = watcher?.frontmostBundleID else { return }
