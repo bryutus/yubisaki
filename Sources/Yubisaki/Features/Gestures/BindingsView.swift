@@ -165,6 +165,10 @@ private struct BindingRowView: View {
         .contentShape(Rectangle())
         .simultaneousGesture(TapGesture().onEnded { onSelect() })
         .onAppear { noteText = binding.note }
+        .onDisappear {
+            // フォーカス喪失前にウィンドウが閉じる/行が破棄される場合に編集中のメモを確定する。
+            if noteText != binding.note { binding.note = noteText }
+        }
     }
 }
 
@@ -174,11 +178,17 @@ private struct BindingsFooter: View {
     @Binding var profile: AppProfile
     @Binding var selectedBindingID: UUID?
 
+    // 全ジェスチャー種が割り当て済みなら追加できるものが無い。
+    private var allGesturesUsed: Bool {
+        Set(profile.bindings.map(\.gesture)).count >= GestureType.allCases.count
+    }
+
     var body: some View {
         HStack(spacing: 2) {
             Button(action: addBinding) { Image(systemName: "plus") }
                 .buttonStyle(.plain)
                 .padding(6)
+                .disabled(allGesturesUsed)
                 .accessibilityLabel("バインディングを追加")
 
             Button(action: deleteSelected) { Image(systemName: "minus") }
