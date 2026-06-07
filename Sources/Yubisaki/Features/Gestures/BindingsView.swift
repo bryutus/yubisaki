@@ -38,7 +38,7 @@ struct BindingsView: View {
                     }
                 }
                 .opacity(profile.enabled ? 1.0 : 0.55)
-                .background(Color(red: 232/255, green: 233/255, blue: 232/255))
+                .background(Color(nsColor: .controlBackgroundColor))
                 .clipShape(RoundedRectangle(cornerRadius: 10))
                 .overlay(
                     RoundedRectangle(cornerRadius: 10)
@@ -49,7 +49,7 @@ struct BindingsView: View {
             .padding(.top, 2)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(red: 236/255, green: 237/255, blue: 236/255))
+        .background(Color(nsColor: .windowBackgroundColor))
         .safeAreaInset(edge: .bottom, spacing: 0) {
             BindingsFooter(profile: $profile, selectedBindingID: $selectedBindingID)
                 .padding(.horizontal, 8)

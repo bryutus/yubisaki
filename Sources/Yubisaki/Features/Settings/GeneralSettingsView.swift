@@ -62,7 +62,7 @@ struct GeneralSettingsView: View {
                 .padding(.bottom, 28)
             }
         }
-        .background(Color(red: 236/255, green: 237/255, blue: 236/255))
+        .background(Color(nsColor: .windowBackgroundColor))
         .onAppear {
             accessibilityGranted = PermissionManager.isAccessibilityGranted
             inputMonitoringGranted = PermissionManager.isInputMonitoringGranted
@@ -99,7 +99,7 @@ private struct FormGroupView<Content: View>: View {
             VStack(spacing: 0) {
                 content()
             }
-            .background(Color(red: 232/255, green: 233/255, blue: 232/255))
+            .background(Color(nsColor: .controlBackgroundColor))
             .clipShape(RoundedRectangle(cornerRadius: 10))
             .overlay(
                 RoundedRectangle(cornerRadius: 10)
