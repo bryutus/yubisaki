@@ -90,13 +90,27 @@ final class ConfigStore: @unchecked Sendable {
         saveProfiles()
         savePreferences()
         saveGlobalProfile()
-        refreshGestureSnapshot()
     }
 
+    // 変更箇所だけ書き込めるよう、粒度別の保存も公開する。いずれもスナップショットを更新する。
     func savePreferences() {
         refreshGestureSnapshot()
         guard let data = try? JSONEncoder().encode(preferences) else { return }
         try? data.write(to: preferencesURL, options: .atomic)
+    }
+
+    func saveProfiles() {
+        refreshGestureSnapshot()
+        ensureBaseDirectory()
+        guard let data = try? JSONEncoder().encode(profiles) else { return }
+        try? data.write(to: profilesURL, options: .atomic)
+    }
+
+    func saveGlobalProfile() {
+        refreshGestureSnapshot()
+        ensureBaseDirectory()
+        guard let data = try? JSONEncoder().encode(globalProfile) else { return }
+        try? data.write(to: globalProfileURL, options: .atomic)
     }
 
     func binding(for bundleID: String, gesture: GestureType) -> GestureBinding? {
@@ -120,12 +134,6 @@ final class ConfigStore: @unchecked Sendable {
         globalProfile = decoded
     }
 
-    private func saveGlobalProfile() {
-        ensureBaseDirectory()
-        guard let data = try? JSONEncoder().encode(globalProfile) else { return }
-        try? data.write(to: globalProfileURL, options: .atomic)
-    }
-
     private func loadProfiles() {
         ensureBaseDirectory()
         guard
@@ -141,12 +149,6 @@ final class ConfigStore: @unchecked Sendable {
             let decoded = try? JSONDecoder().decode(GlobalPreferences.self, from: data)
         else { return }
         preferences = decoded
-    }
-
-    private func saveProfiles() {
-        ensureBaseDirectory()
-        guard let data = try? JSONEncoder().encode(profiles) else { return }
-        try? data.write(to: profilesURL, options: .atomic)
     }
 
     private func ensureBaseDirectory() {

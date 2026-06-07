@@ -174,20 +174,25 @@ struct SettingsView: View {
                     get: { configStore.globalProfile },
                     set: {
                         configStore.globalProfile = $0
-                        configStore.save()
+                        configStore.saveGlobalProfile()
                     }
                 )
             )
         } else if let id = selectedBundleID,
-                  configStore.profiles.contains(where: { $0.bundleID == id }) {
+                  let index = configStore.profiles.firstIndex(where: { $0.bundleID == id }) {
             BindingsView(
                 profile: Binding(
-                    get: { configStore.profiles.first(where: { $0.bundleID == id }) ?? AppProfile(bundleID: id) },
+                    get: {
+                        // index は選択時点のもの。配列が変わっていたら安全側に倒す。
+                        guard configStore.profiles.indices.contains(index),
+                              configStore.profiles[index].bundleID == id else { return AppProfile(bundleID: id) }
+                        return configStore.profiles[index]
+                    },
                     set: {
-                        if let i = configStore.profiles.firstIndex(where: { $0.bundleID == id }) {
-                            configStore.profiles[i] = $0
-                            configStore.save()
-                        }
+                        guard configStore.profiles.indices.contains(index),
+                              configStore.profiles[index].bundleID == id else { return }
+                        configStore.profiles[index] = $0
+                        configStore.saveProfiles()
                     }
                 )
             )
@@ -210,7 +215,7 @@ struct SettingsView: View {
                   let bundleID = bundle.bundleIdentifier else { return }
             guard !configStore.profiles.contains(where: { $0.bundleID == bundleID }) else { return }
             configStore.profiles.append(AppProfile(bundleID: bundleID, bindings: []))
-            configStore.save()
+            configStore.saveProfiles()
             selectedBundleID = bundleID
         }
     }
@@ -218,7 +223,7 @@ struct SettingsView: View {
     private func removeSelected() {
         guard let id = selectedBundleID else { return }
         configStore.profiles.removeAll { $0.bundleID == id }
-        configStore.save()
+        configStore.saveProfiles()
         selectedBundleID = "global"
     }
 }
