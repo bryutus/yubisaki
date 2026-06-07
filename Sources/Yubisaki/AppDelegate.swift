@@ -16,10 +16,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let monitor = GestureMonitor()
         monitor.shouldHandleGesture = { [weak watcher] in
             // CGEventTap スレッドから呼ばれる。メインへ同期せず、ロック保護のスナップショットを読む。
+            // 使用可能な pinch バインディング(アプリ個別 or グローバル)がある時だけ消費し、
+            // 未割当時はネイティブのピンチズームを温存する。
             let snapshot = ConfigStore.shared.gestureSnapshot()
             guard snapshot.gesturesEnabled else { return false }
             guard let bundleID = watcher?.frontmostBundleID else { return false }
-            return snapshot.enabledBundleIDs.contains(bundleID) || snapshot.globalEnabled
+            return snapshot.pinchBoundBundleIDs.contains(bundleID) || snapshot.globalHasPinchBinding
         }
         monitor.onGestureDetected = { [weak watcher] gesture in
             guard let bundleID = watcher?.frontmostBundleID else { return }

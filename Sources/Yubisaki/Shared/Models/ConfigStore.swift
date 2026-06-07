@@ -5,8 +5,10 @@ import os
 /// `ConfigStore` の `@Observable` 状態には触れず、これだけをロック越しに参照する。
 struct GestureSnapshot: Sendable {
     var gesturesEnabled = true
-    var enabledBundleIDs: Set<String> = []
-    var globalEnabled = false
+    // 現在検出可能なジェスチャー(pinchIn/Out)に使用可能なバインディングを持つ、有効なプロファイルの bundleID。
+    // ここに無いアプリでは pinch を消費せず、ネイティブのピンチズームを温存する。
+    var pinchBoundBundleIDs: Set<String> = []
+    var globalHasPinchBinding = false
 }
 
 struct GlobalPreferences: Codable, Sendable, Equatable {
@@ -55,10 +57,15 @@ final class ConfigStore: @unchecked Sendable {
 
     /// 現在のメインスレッド状態からスナップショットを作り直す。状態変更後にメインから呼ぶ。
     private func refreshGestureSnapshot() {
+        func hasUsablePinchBinding(_ profile: AppProfile) -> Bool {
+            profile.enabled && profile.bindings.contains {
+                ($0.gesture == .pinchIn || $0.gesture == .pinchOut) && $0.enabled && $0.keyCode != 0
+            }
+        }
         let snapshot = GestureSnapshot(
             gesturesEnabled: preferences.gesturesEnabled,
-            enabledBundleIDs: Set(profiles.filter(\.enabled).map(\.bundleID)),
-            globalEnabled: globalProfile.enabled
+            pinchBoundBundleIDs: Set(profiles.filter(hasUsablePinchBinding).map(\.bundleID)),
+            globalHasPinchBinding: hasUsablePinchBinding(globalProfile)
         )
         gestureSnapshotLock.withLock { $0 = snapshot }
     }
