@@ -18,7 +18,7 @@ struct BindingsView: View {
                     ColumnHeaderRow()
                     Color(nsColor: .separatorColor).frame(height: 0.5).padding(.horizontal, 16)
                     if profile.bindings.isEmpty {
-                        Text("ジェスチャーバインディングがありません")
+                        Text(L("gestures.noBindings"))
                             .foregroundStyle(.secondary)
                             .frame(maxWidth: .infinity, alignment: .center)
                             .padding(.vertical, 40)
