@@ -66,6 +66,7 @@
 "gestures.column.shortcut"  = "Shortcut";
 "gestures.column.note"      = "Note";
 "gestures.activeCount"      = "%d active bindings";
+"gestures.selectApp"        = "Select an app from the list on the left";
 
 /* Shortcut Field */
 "shortcut.clickToRecord" = "Click to record";

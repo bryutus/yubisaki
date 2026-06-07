@@ -192,7 +192,7 @@ struct SettingsView: View {
                 )
             )
         } else {
-            Text("左のリストからアプリを選択してください")
+            Text(L("gestures.selectApp"))
                 .foregroundStyle(.secondary)
         }
     }

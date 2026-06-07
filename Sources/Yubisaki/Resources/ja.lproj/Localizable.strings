@@ -66,6 +66,7 @@
 "gestures.column.shortcut"  = "ショートカット";
 "gestures.column.note"      = "メモ";
 "gestures.activeCount"      = "%d個の有効なバインディング";
+"gestures.selectApp"        = "左のリストからアプリを選択してください";
 
 /* Shortcut Field */
 "shortcut.clickToRecord" = "クリックして記録";
