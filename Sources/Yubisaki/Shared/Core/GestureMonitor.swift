@@ -63,6 +63,15 @@ final class GestureMonitor: @unchecked Sendable {
         guard let userInfo else { return Unmanaged.passRetained(event) }
         let monitor = Unmanaged<GestureMonitor>.fromOpaque(userInfo).takeUnretainedValue()
 
+        // コールバックが遅い等で OS にタップを無効化された場合は、特殊イベントが届く。
+        // 再有効化しないとジェスチャーが以降ずっと無反応になるため、ここで復帰させる。
+        if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
+            if let tap = monitor.eventTap {
+                CGEvent.tapEnable(tap: tap, enable: true)
+            }
+            return Unmanaged.passUnretained(event)
+        }
+
         // cghidEventTap は magnify 以外の内部イベント（type 0xFFFFFFFF 等）も届くことがある。
         // NSEvent(cgEvent:) に未知の type を渡すと NSInternalInconsistencyException が発生するため、
         // CGEvent レベルで先にフィルタする。
