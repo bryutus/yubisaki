@@ -234,21 +234,10 @@ private struct AppRowView: View {
     let bundleID: String
     let enabledCount: Int
 
-    private var isGlobal: Bool { bundleID == "global" }
-
-    private var appURL: URL? {
-        isGlobal ? nil : NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID)
-    }
-
-    private var appName: String {
-        if isGlobal { return L("sidebar.allApps") }
-        return appURL.map { $0.deletingPathExtension().lastPathComponent } ?? bundleID
-    }
-
     var body: some View {
         HStack(spacing: 8) {
-            appIconView
-            Text(appName)
+            AppIconView(bundleID: bundleID, size: 20)
+            Text(AppDisplay.name(for: bundleID))
                 .font(.callout.weight(.medium))
                 .lineLimit(1)
             Spacer()
@@ -260,23 +249,5 @@ private struct AppRowView: View {
             }
         }
         .padding(.vertical, 2)
-    }
-
-    @ViewBuilder
-    private var appIconView: some View {
-        if let url = appURL {
-            Image(nsImage: NSWorkspace.shared.icon(forFile: url.path))
-                .resizable()
-                .frame(width: 20, height: 20)
-        } else {
-            ZStack {
-                RoundedRectangle(cornerRadius: 4)
-                    .fill(.quaternary)
-                    .frame(width: 20, height: 20)
-                Image(systemName: "hand.draw")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-            }
-        }
     }
 }

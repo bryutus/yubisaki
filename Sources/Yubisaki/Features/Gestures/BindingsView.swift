@@ -64,23 +64,14 @@ private struct AppHeaderView: View {
     let isGlobalProfile: Bool
     @Binding var enabled: Bool
 
-    private var appURL: URL? {
-        isGlobalProfile ? nil : NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID)
-    }
-
-    private var appName: String {
-        if isGlobalProfile { return L("sidebar.allApps") }
-        return appURL.map { $0.deletingPathExtension().lastPathComponent } ?? bundleID
-    }
-
     private var toggleLabel: String {
         isGlobalProfile ? L("gestures.gesturesEnabled") : L("gestures.enabledForApp")
     }
 
     var body: some View {
         HStack(spacing: 12) {
-            appIconView
-            Text(appName)
+            AppIconView(bundleID: bundleID, size: 44, cornerRadius: 10)
+            Text(AppDisplay.name(for: bundleID))
                 .font(.headline)
             Spacer()
             Text(toggleLabel)
@@ -91,24 +82,6 @@ private struct AppHeaderView: View {
         }
         .padding(.horizontal, 16)
         .padding(.bottom, 12)
-    }
-
-    @ViewBuilder
-    private var appIconView: some View {
-        if let url = appURL {
-            Image(nsImage: NSWorkspace.shared.icon(forFile: url.path))
-                .resizable()
-                .frame(width: 44, height: 44)
-        } else {
-            ZStack {
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(.quaternary)
-                    .frame(width: 44, height: 44)
-                Image(systemName: "hand.draw")
-                    .font(.title3)
-                    .foregroundStyle(.secondary)
-            }
-        }
     }
 }
 
