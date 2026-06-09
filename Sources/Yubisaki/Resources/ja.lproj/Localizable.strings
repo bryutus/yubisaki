@@ -58,6 +58,9 @@
 "sidebar.section.system"       = "システム";
 "sidebar.section.applications" = "アプリケーション";
 "sidebar.allApps"              = "すべてのアプリ";
+"sidebar.addApp"               = "アプリを追加";
+"sidebar.removeApp"            = "アプリを削除";
+"sidebar.generalSettings"      = "一般設定";
 
 /* Gestures Tab */
 "gestures.enabledForApp"    = "このアプリで有効";
@@ -66,6 +69,10 @@
 "gestures.column.shortcut"  = "ショートカット";
 "gestures.column.note"      = "メモ";
 "gestures.activeCount"      = "%d個の有効なバインディング";
+"gestures.selectApp"        = "左のリストからアプリを選択してください";
+"gestures.noBindings"       = "ジェスチャーバインディングがありません";
+"gestures.addBinding"       = "バインディングを追加";
+"gestures.deleteBinding"    = "バインディングを削除";
 
 /* Shortcut Field */
 "shortcut.clickToRecord" = "クリックして記録";

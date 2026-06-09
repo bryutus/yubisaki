@@ -1,14 +1,19 @@
 import AppKit
+import os
+
+private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "yubisaki", category: "AppWatcher")
 
 final class AppWatcher: @unchecked Sendable {
 
-    private(set) var frontmostBundleID: String?
+    // CGEventTap スレッドからも読むため、ロックで保護する（書き込みはメインのみ）。
+    private let frontmostBundleIDLock = OSAllocatedUnfairLock(initialState: String?.none)
+    var frontmostBundleID: String? { frontmostBundleIDLock.withLock { $0 } }
     var onAppChanged: ((String?) -> Void)?
 
     private var observer: NSObjectProtocol?
 
     func startWatching() {
-        frontmostBundleID = NSWorkspace.shared.frontmostApplication?.bundleIdentifier
+        setFrontmostBundleID(NSWorkspace.shared.frontmostApplication?.bundleIdentifier)
 
         observer = NSWorkspace.shared.notificationCenter.addObserver(
             forName: NSWorkspace.didActivateApplicationNotification,
@@ -17,9 +22,14 @@ final class AppWatcher: @unchecked Sendable {
         ) { [weak self] notification in
             let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication
             let bundleID = app?.bundleIdentifier
-            self?.frontmostBundleID = bundleID
+            self?.setFrontmostBundleID(bundleID)
+            logger.debug("Frontmost app: \(bundleID ?? "nil", privacy: .public)")
             self?.onAppChanged?(bundleID)
         }
+    }
+
+    private func setFrontmostBundleID(_ bundleID: String?) {
+        frontmostBundleIDLock.withLock { $0 = bundleID }
     }
 
     func stopWatching() {

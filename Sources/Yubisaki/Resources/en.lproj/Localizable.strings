@@ -58,6 +58,9 @@
 "sidebar.section.system"       = "System";
 "sidebar.section.applications" = "Applications";
 "sidebar.allApps"              = "All Applications";
+"sidebar.addApp"               = "Add app";
+"sidebar.removeApp"            = "Remove app";
+"sidebar.generalSettings"      = "General settings";
 
 /* Gestures Tab */
 "gestures.enabledForApp"    = "Enabled for this app";
@@ -66,6 +69,10 @@
 "gestures.column.shortcut"  = "Shortcut";
 "gestures.column.note"      = "Note";
 "gestures.activeCount"      = "%d active bindings";
+"gestures.selectApp"        = "Select an app from the list on the left";
+"gestures.noBindings"       = "No gesture bindings";
+"gestures.addBinding"       = "Add binding";
+"gestures.deleteBinding"    = "Delete binding";
 
 /* Shortcut Field */
 "shortcut.clickToRecord" = "Click to record";
