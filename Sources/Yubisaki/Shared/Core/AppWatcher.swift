@@ -1,6 +1,8 @@
 import AppKit
 import os
 
+private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "yubisaki", category: "AppWatcher")
+
 final class AppWatcher: @unchecked Sendable {
 
     // CGEventTap スレッドからも読むため、ロックで保護する（書き込みはメインのみ）。
@@ -21,6 +23,7 @@ final class AppWatcher: @unchecked Sendable {
             let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication
             let bundleID = app?.bundleIdentifier
             self?.setFrontmostBundleID(bundleID)
+            logger.debug("Frontmost app: \(bundleID ?? "nil", privacy: .public)")
             self?.onAppChanged?(bundleID)
         }
     }

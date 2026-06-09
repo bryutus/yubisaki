@@ -1,6 +1,9 @@
 import AppKit
+import os
 @preconcurrency import CoreGraphics
 @preconcurrency import CoreFoundation
+
+private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "yubisaki", category: "GestureMonitor")
 
 extension CGEventType {
     static let magnify = CGEventType(rawValue: 29)!
@@ -29,7 +32,7 @@ final class GestureMonitor: @unchecked Sendable {
             callback: Self.eventTapCallback,
             userInfo: Unmanaged.passUnretained(self).toOpaque()
         ) else {
-            print("[GestureMonitor] Failed to create event tap. Check Accessibility permission.")
+            logger.error("Failed to create event tap — Accessibility permission may be missing")
             return
         }
 
@@ -45,7 +48,7 @@ final class GestureMonitor: @unchecked Sendable {
         }
         thread.name = "GestureMonitor"
         thread.start()
-        print("[GestureMonitor] started on background thread (cghidEventTap, defaultTap)")
+        logger.info("Started on background thread (cghidEventTap)")
     }
 
     func stopMonitoring() {
@@ -66,6 +69,11 @@ final class GestureMonitor: @unchecked Sendable {
         // コールバックが遅い等で OS にタップを無効化された場合は、特殊イベントが届く。
         // 再有効化しないとジェスチャーが以降ずっと無反応になるため、ここで復帰させる。
         if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
+            if type == .tapDisabledByTimeout {
+                logger.warning("Event tap disabled by timeout, re-enabling")
+            } else {
+                logger.warning("Event tap disabled by user input, re-enabling")
+            }
             if let tap = monitor.eventTap {
                 CGEvent.tapEnable(tap: tap, enable: true)
             }
@@ -104,6 +112,7 @@ final class GestureMonitor: @unchecked Sendable {
             monitor.isHandlingCurrentGesture = false
             if let gesture = GestureRecognizer.recognize(magnitude: total) {
                 DispatchQueue.main.async {
+                    logger.debug("Gesture recognized: \(String(describing: gesture), privacy: .public)")
                     monitor.onGestureDetected?(gesture)
                 }
             }

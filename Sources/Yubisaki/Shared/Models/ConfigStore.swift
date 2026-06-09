@@ -1,6 +1,8 @@
 import Foundation
 import os
 
+private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "yubisaki", category: "ConfigStore")
+
 /// ジェスチャー判定ホットパス（CGEventTap スレッド）から読むための最小スナップショット。
 /// `ConfigStore` の `@Observable` 状態には触れず、これだけをロック越しに参照する。
 struct GestureSnapshot: Sendable {
@@ -95,22 +97,34 @@ final class ConfigStore: @unchecked Sendable {
     // 変更箇所だけ書き込めるよう、粒度別の保存も公開する。いずれもスナップショットを更新する。
     func savePreferences() {
         refreshGestureSnapshot()
-        guard let data = try? JSONEncoder().encode(preferences) else { return }
-        try? data.write(to: preferencesURL, options: .atomic)
+        do {
+            let data = try JSONEncoder().encode(preferences)
+            try data.write(to: preferencesURL, options: .atomic)
+        } catch {
+            logger.error("Failed to save preferences: \(error, privacy: .public)")
+        }
     }
 
     func saveProfiles() {
         refreshGestureSnapshot()
         ensureBaseDirectory()
-        guard let data = try? JSONEncoder().encode(profiles) else { return }
-        try? data.write(to: profilesURL, options: .atomic)
+        do {
+            let data = try JSONEncoder().encode(profiles)
+            try data.write(to: profilesURL, options: .atomic)
+        } catch {
+            logger.error("Failed to save profiles: \(error, privacy: .public)")
+        }
     }
 
     func saveGlobalProfile() {
         refreshGestureSnapshot()
         ensureBaseDirectory()
-        guard let data = try? JSONEncoder().encode(globalProfile) else { return }
-        try? data.write(to: globalProfileURL, options: .atomic)
+        do {
+            let data = try JSONEncoder().encode(globalProfile)
+            try data.write(to: globalProfileURL, options: .atomic)
+        } catch {
+            logger.error("Failed to save global profile: \(error, privacy: .public)")
+        }
     }
 
     func binding(for bundleID: String, gesture: GestureType) -> GestureBinding? {
@@ -127,28 +141,34 @@ final class ConfigStore: @unchecked Sendable {
     // MARK: - Private
 
     private func loadGlobalProfile() {
-        guard
-            let data = try? Data(contentsOf: globalProfileURL),
-            let decoded = try? JSONDecoder().decode(AppProfile.self, from: data)
-        else { return }
-        globalProfile = decoded
+        guard let data = try? Data(contentsOf: globalProfileURL) else { return }
+        do {
+            globalProfile = try JSONDecoder().decode(AppProfile.self, from: data)
+            logger.debug("Loaded global profile (\(self.globalProfile.bindings.count) bindings)")
+        } catch {
+            logger.error("Failed to decode global profile: \(error, privacy: .public)")
+        }
     }
 
     private func loadProfiles() {
         ensureBaseDirectory()
-        guard
-            let data = try? Data(contentsOf: profilesURL),
-            let decoded = try? JSONDecoder().decode([AppProfile].self, from: data)
-        else { return }
-        profiles = decoded
+        guard let data = try? Data(contentsOf: profilesURL) else { return }
+        do {
+            profiles = try JSONDecoder().decode([AppProfile].self, from: data)
+            logger.debug("Loaded \(self.profiles.count) app profiles")
+        } catch {
+            logger.error("Failed to decode profiles: \(error, privacy: .public)")
+        }
     }
 
     private func loadPreferences() {
-        guard
-            let data = try? Data(contentsOf: preferencesURL),
-            let decoded = try? JSONDecoder().decode(GlobalPreferences.self, from: data)
-        else { return }
-        preferences = decoded
+        guard let data = try? Data(contentsOf: preferencesURL) else { return }
+        do {
+            preferences = try JSONDecoder().decode(GlobalPreferences.self, from: data)
+            logger.debug("Loaded preferences (gesturesEnabled: \(self.preferences.gesturesEnabled))")
+        } catch {
+            logger.error("Failed to decode preferences: \(error, privacy: .public)")
+        }
     }
 
     private func ensureBaseDirectory() {
