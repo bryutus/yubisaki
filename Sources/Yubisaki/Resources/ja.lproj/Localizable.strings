@@ -71,6 +71,8 @@
 "gestures.activeCount"      = "%d個の有効なバインディング";
 "gestures.selectApp"        = "左のリストからアプリを選択してください";
 "gestures.noBindings"       = "ジェスチャーバインディングがありません";
+"gestures.addBinding"       = "バインディングを追加";
+"gestures.deleteBinding"    = "バインディングを削除";
 
 /* Shortcut Field */
 "shortcut.clickToRecord" = "クリックして記録";

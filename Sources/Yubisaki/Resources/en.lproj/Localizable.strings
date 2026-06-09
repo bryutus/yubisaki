@@ -71,6 +71,8 @@
 "gestures.activeCount"      = "%d active bindings";
 "gestures.selectApp"        = "Select an app from the list on the left";
 "gestures.noBindings"       = "No gesture bindings";
+"gestures.addBinding"       = "Add binding";
+"gestures.deleteBinding"    = "Delete binding";
 
 /* Shortcut Field */
 "shortcut.clickToRecord" = "Click to record";

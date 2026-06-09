@@ -189,13 +189,13 @@ private struct BindingsFooter: View {
                 .buttonStyle(.plain)
                 .padding(6)
                 .disabled(allGesturesUsed)
-                .accessibilityLabel("バインディングを追加")
+                .accessibilityLabel(L("gestures.addBinding"))
 
             Button(action: deleteSelected) { Image(systemName: "minus") }
                 .buttonStyle(.plain)
                 .padding(6)
                 .disabled(selectedBindingID == nil)
-                .accessibilityLabel("バインディングを削除")
+                .accessibilityLabel(L("gestures.deleteBinding"))
 
             Spacer()
         }
