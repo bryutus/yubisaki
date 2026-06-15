@@ -2,44 +2,14 @@
 "gesture.group.twoFinger"   = "2-finger";
 "gesture.group.threeFinger" = "3-finger";
 "gesture.group.fourFinger"  = "4-finger";
-"gesture.group.fiveFinger"  = "5-finger";
-"gesture.group.force"       = "Force";
-"gesture.group.corner"      = "Corners";
 
 /* Gesture Types */
-"gesture.pinchIn"            = "Pinch In";
-"gesture.pinchOut"           = "Pinch Out";
-"gesture.rotateCW"           = "Rotate Right";
-"gesture.rotateCCW"          = "Rotate Left";
-"gesture.twoTipTapLeft"      = "Tip Tap Left";
-"gesture.twoTipTapRight"     = "Tip Tap Right";
-"gesture.twoDoubleTap"       = "Double Tap";
-"gesture.twoSwipeUp"         = "Swipe Up";
-"gesture.twoSwipeDown"       = "Swipe Down";
-"gesture.threeTap"           = "Tap";
-"gesture.threeDoubleTap"     = "Double Tap";
-"gesture.threeClick"         = "Click";
-"gesture.threeSwipeUp"       = "Swipe Up";
-"gesture.threeSwipeDown"     = "Swipe Down";
-"gesture.threeSwipeLeft"     = "Swipe Left";
-"gesture.threeSwipeRight"    = "Swipe Right";
-"gesture.threeTipTapLeft"    = "Tip Tap Left";
-"gesture.threeTipTapRight"   = "Tip Tap Right";
-"gesture.fourTap"            = "Tap";
-"gesture.fourDoubleTap"      = "Double Tap";
-"gesture.fourSwipeUp"        = "Swipe Up";
-"gesture.fourSwipeDown"      = "Swipe Down";
-"gesture.fourSwipeLeft"      = "Swipe Left";
-"gesture.fourSwipeRight"     = "Swipe Right";
-"gesture.fiveTap"            = "Tap";
-"gesture.fivePinchIn"        = "Pinch In";
-"gesture.fiveSpread"         = "Spread";
-"gesture.forceClick"         = "Force Click";
-"gesture.forceDrag"          = "Force Drag";
-"gesture.cornerTopLeft"      = "Tap Top-Left";
-"gesture.cornerTopRight"     = "Tap Top-Right";
-"gesture.cornerBottomLeft"   = "Tap Bottom-Left";
-"gesture.cornerBottomRight"  = "Tap Bottom-Right";
+"gesture.pinchIn"           = "Pinch In";
+"gesture.pinchOut"          = "Pinch Out";
+"gesture.twoTipTapLeft"     = "Tip Tap Left";
+"gesture.twoTipTapRight"    = "Tip Tap Right";
+"gesture.threeTap"          = "Tap";
+"gesture.fourTap"           = "Tap";
 
 /* Menu Bar */
 "menu.status.running" = "Running";

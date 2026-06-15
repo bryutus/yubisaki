@@ -2,44 +2,14 @@
 "gesture.group.twoFinger"   = "2本指";
 "gesture.group.threeFinger" = "3本指";
 "gesture.group.fourFinger"  = "4本指";
-"gesture.group.fiveFinger"  = "5本指";
-"gesture.group.force"       = "フォース";
-"gesture.group.corner"      = "コーナー";
 
 /* Gesture Types */
 "gesture.pinchIn"            = "ピンチイン";
 "gesture.pinchOut"           = "ピンチアウト";
-"gesture.rotateCW"           = "右回転";
-"gesture.rotateCCW"          = "左回転";
 "gesture.twoTipTapLeft"      = "チップタップ (左)";
 "gesture.twoTipTapRight"     = "チップタップ (右)";
-"gesture.twoDoubleTap"       = "ダブルタップ";
-"gesture.twoSwipeUp"         = "上スワイプ";
-"gesture.twoSwipeDown"       = "下スワイプ";
 "gesture.threeTap"           = "タップ";
-"gesture.threeDoubleTap"     = "ダブルタップ";
-"gesture.threeClick"         = "クリック";
-"gesture.threeSwipeUp"       = "上スワイプ";
-"gesture.threeSwipeDown"     = "下スワイプ";
-"gesture.threeSwipeLeft"     = "左スワイプ";
-"gesture.threeSwipeRight"    = "右スワイプ";
-"gesture.threeTipTapLeft"    = "チップタップ (左)";
-"gesture.threeTipTapRight"   = "チップタップ (右)";
 "gesture.fourTap"            = "タップ";
-"gesture.fourDoubleTap"      = "ダブルタップ";
-"gesture.fourSwipeUp"        = "上スワイプ";
-"gesture.fourSwipeDown"      = "下スワイプ";
-"gesture.fourSwipeLeft"      = "左スワイプ";
-"gesture.fourSwipeRight"     = "右スワイプ";
-"gesture.fiveTap"            = "タップ";
-"gesture.fivePinchIn"        = "ピンチイン";
-"gesture.fiveSpread"         = "スプレッド";
-"gesture.forceClick"         = "フォースクリック";
-"gesture.forceDrag"          = "フォースドラッグ";
-"gesture.cornerTopLeft"      = "左上タップ";
-"gesture.cornerTopRight"     = "右上タップ";
-"gesture.cornerBottomLeft"   = "左下タップ";
-"gesture.cornerBottomRight"  = "右下タップ";
 
 /* Menu Bar */
 "menu.status.running" = "有効";
