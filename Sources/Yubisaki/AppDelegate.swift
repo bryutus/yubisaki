@@ -1,4 +1,5 @@
 import AppKit
+import ServiceManagement
 import os
 
 private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "yubisaki", category: "AppDelegate")
@@ -11,6 +12,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         PermissionManager.requestAuthorization()
         ConfigStore.shared.load()
+        applyStartupPreferences()
 
         let watcher = AppWatcher()
         watcher.startWatching()
@@ -34,6 +36,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         monitor.startMonitoring()
         gestureMonitor = monitor
+    }
+
+    private func applyStartupPreferences() {
+        let prefs = ConfigStore.shared.preferences
+
+        // SMAppService の実態と保存値を同期（ユーザーがシステム設定で手動変更した場合に対応）
+        let isRegistered = SMAppService.mainApp.status == .enabled
+        if prefs.launchAtLogin != isRegistered {
+            ConfigStore.shared.preferences.launchAtLogin = isRegistered
+            ConfigStore.shared.savePreferences()
+        }
+
+        if prefs.showInDock {
+            NSApp.setActivationPolicy(.regular)
+        }
     }
 
     func applicationWillTerminate(_ notification: Notification) {

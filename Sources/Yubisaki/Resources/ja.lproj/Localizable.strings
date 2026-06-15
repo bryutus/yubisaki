@@ -92,6 +92,8 @@
 "general.permissionGranted"     = "許可済み";
 "general.permissionDenied"      = "未許可";
 "general.openSystemSettings"    = "システム設定を開く…";
-"general.footer.help"           = "ヘルプ";
-"general.footer.privacy"        = "プライバシー";
 "general.footer.reset"          = "リセット…";
+"general.reset.title"           = "設定をリセット";
+"general.reset.message"         = "ジェスチャー有効化・ログイン時起動・Dock表示の設定をデフォルトに戻します。";
+"general.reset.confirm"         = "リセット";
+"general.reset.cancel"          = "キャンセル";

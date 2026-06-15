@@ -92,6 +92,8 @@
 "general.permissionGranted"     = "Granted";
 "general.permissionDenied"      = "Not Granted";
 "general.openSystemSettings"    = "Open System Settings…";
-"general.footer.help"           = "Help";
-"general.footer.privacy"        = "Privacy";
 "general.footer.reset"          = "Reset…";
+"general.reset.title"           = "Reset Settings";
+"general.reset.message"         = "Resets gestures enabled, launch at login, and show in Dock to their defaults.";
+"general.reset.confirm"         = "Reset";
+"general.reset.cancel"          = "Cancel";

@@ -1,10 +1,15 @@
 import SwiftUI
 import AppKit
+import ServiceManagement
+import os
+
+private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "yubisaki", category: "GeneralSettings")
 
 struct GeneralSettingsView: View {
     @Bindable var configStore: ConfigStore
     @State private var accessibilityGranted = false
     @State private var inputMonitoringGranted = false
+    @State private var showResetConfirmation = false
 
     private var appVersion: String {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "—"
@@ -44,17 +49,19 @@ struct GeneralSettingsView: View {
                         .font(.caption.monospaced())
                         .foregroundStyle(.tertiary)
                     Spacer()
-                    Button(L("general.footer.help")) {}
-                        .buttonStyle(.link)
-                        .font(.caption)
-                    Text("·").foregroundStyle(.tertiary).font(.caption)
-                    Button(L("general.footer.privacy")) {}
-                        .buttonStyle(.link)
-                        .font(.caption)
-                    Text("·").foregroundStyle(.tertiary).font(.caption)
-                    Button(L("general.footer.reset")) {}
-                        .buttonStyle(.link)
-                        .font(.caption)
+                    Button(L("general.footer.reset")) {
+                        showResetConfirmation = true
+                    }
+                    .buttonStyle(.link)
+                    .font(.caption)
+                }
+                .confirmationDialog(L("general.reset.title"), isPresented: $showResetConfirmation, titleVisibility: .visible) {
+                    Button(L("general.reset.confirm"), role: .destructive) {
+                        resetPreferences()
+                    }
+                    Button(L("general.reset.cancel"), role: .cancel) {}
+                } message: {
+                    Text(L("general.reset.message"))
                 }
                 .padding(.horizontal, 24)
                 .padding(.top, 16)
@@ -75,7 +82,32 @@ struct GeneralSettingsView: View {
             if old.gesturesEnabled != new.gesturesEnabled {
                 NotificationCenter.default.post(name: .gesturesEnabledDidChange, object: nil)
             }
+            if old.launchAtLogin != new.launchAtLogin {
+                do {
+                    if new.launchAtLogin {
+                        try SMAppService.mainApp.register()
+                    } else {
+                        try SMAppService.mainApp.unregister()
+                    }
+                } catch {
+                    logger.error("launchAtLogin \(new.launchAtLogin ? "register" : "unregister") failed: \(error, privacy: .public)")
+                }
+            }
+            if old.showInDock != new.showInDock {
+                NSApp.setActivationPolicy(new.showInDock ? .regular : .accessory)
+            }
         }
+    }
+
+    private func resetPreferences() {
+        let defaults = GlobalPreferences()
+        if configStore.preferences.launchAtLogin {
+            try? SMAppService.mainApp.unregister()
+        }
+        configStore.preferences = defaults
+        configStore.savePreferences()
+        NSApp.setActivationPolicy(.accessory)
+        NotificationCenter.default.post(name: .gesturesEnabledDidChange, object: nil)
     }
 }
 

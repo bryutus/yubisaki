@@ -10,7 +10,8 @@ let package = Package(
             name: "Yubisaki",
             path: "Sources/Yubisaki",
             resources: [.process("Resources")],
-            swiftSettings: [.swiftLanguageMode(.v6)]
+            swiftSettings: [.swiftLanguageMode(.v6)],
+            linkerSettings: [.linkedFramework("ServiceManagement")]
         )
     ]
 )
