@@ -29,6 +29,7 @@ final class KeyRecorderNSView: NSView {
     private var isRecording = false { didSet { needsDisplay = true } }
     private var pendingModifiers: NSEvent.ModifierFlags = [] { didSet { needsDisplay = true } }
     nonisolated(unsafe) private var blinkTimer: Timer?
+    nonisolated(unsafe) private var localKeyMonitor: Any?
     private var blinkOn = true
 
     override var acceptsFirstResponder: Bool { true }
@@ -56,6 +57,13 @@ final class KeyRecorderNSView: NSView {
         pendingModifiers = []
         isRecording = true
         startBlink()
+        // Cmd+W など、メニューショートカットが keyDown より先に処理されるのを防ぐ。
+        // ローカルモニターはメニュー処理より前に実行され、nil を返すことでイベントを消費する。
+        localKeyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            guard let self, self.isRecording else { return event }
+            self.keyDown(with: event)
+            return nil
+        }
         return true
     }
 
@@ -64,6 +72,10 @@ final class KeyRecorderNSView: NSView {
         isRecording = false
         pendingModifiers = []
         stopBlink()
+        if let monitor = localKeyMonitor {
+            NSEvent.removeMonitor(monitor)
+            localKeyMonitor = nil
+        }
         return true
     }
 
