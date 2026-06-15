@@ -16,19 +16,17 @@ struct GestureSnapshot: Sendable {
 struct GlobalPreferences: Codable, Sendable, Equatable {
     var gesturesEnabled: Bool = true
     var launchAtLogin: Bool = false
-    var showMenuBar: Bool = true
     var showInDock: Bool = false
 
     // Migration from future format changes
     private enum CodingKeys: String, CodingKey {
-        case gesturesEnabled, launchAtLogin, showMenuBar, showInDock
+        case gesturesEnabled, launchAtLogin, showInDock
     }
 
     init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         gesturesEnabled = try c.decodeIfPresent(Bool.self, forKey: .gesturesEnabled) ?? true
         launchAtLogin   = try c.decodeIfPresent(Bool.self, forKey: .launchAtLogin)   ?? false
-        showMenuBar     = try c.decodeIfPresent(Bool.self, forKey: .showMenuBar)      ?? true
         showInDock      = try c.decodeIfPresent(Bool.self, forKey: .showInDock)       ?? false
     }
 

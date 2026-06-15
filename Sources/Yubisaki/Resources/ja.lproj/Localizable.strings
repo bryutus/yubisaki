@@ -81,17 +81,14 @@
 
 /* General Tab */
 "general.launchAtLogin"         = "ログイン時にyubisakiを起動";
-"general.launchAtLoginHint"     = "サインインしたとき自動的にメニューバーに常駐します。";
-"general.showMenuBar"           = "メニューバーにアイコンを表示";
-"general.showMenuBarHint"       = "オフにするとyubisakiはバックグラウンドで動作し続けます。";
 "general.showInDock"            = "Dockに表示";
 "general.gesturesEnabled"       = "ジェスチャーを有効化";
-"general.gesturesEnabledHint"   = "グローバルにオンオフを切り替えます。⌃⌥⌘G でいつでもトグルできます。";
 "general.section.gestures"      = "ジェスチャー";
 "general.section.permissions"   = "アクセス権限";
 "general.accessibility"         = "アクセシビリティ";
-"general.accessibilityHint"     = "yubisakiはキーボードショートカットを送信するために、アクセシビリティ権限を必要とします。";
+"general.accessibilityHint"     = "キーボードショートカットを送信するために必要です。";
 "general.inputMonitoring"       = "入力監視";
+"general.inputMonitoringHint"   = "トラックパッドのジェスチャーを検出するために必要です。";
 "general.permissionGranted"     = "許可済み";
 "general.permissionDenied"      = "未許可";
 "general.openSystemSettings"    = "システム設定を開く…";

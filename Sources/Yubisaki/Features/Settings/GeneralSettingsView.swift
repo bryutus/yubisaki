@@ -14,15 +14,13 @@ struct GeneralSettingsView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 FormGroupView(topPadding: 2) {
-                    ToggleRowView(label: L("general.launchAtLogin"), hint: L("general.launchAtLoginHint"), isOn: $configStore.preferences.launchAtLogin)
-                    Color(nsColor: .separatorColor).frame(height: 0.5).padding(.horizontal, 16)
-                    ToggleRowView(label: L("general.showMenuBar"), hint: L("general.showMenuBarHint"), isOn: $configStore.preferences.showMenuBar)
+                    ToggleRowView(label: L("general.launchAtLogin"), isOn: $configStore.preferences.launchAtLogin)
                     Color(nsColor: .separatorColor).frame(height: 0.5).padding(.horizontal, 16)
                     ToggleRowView(label: L("general.showInDock"), isOn: $configStore.preferences.showInDock)
                 }
 
                 FormGroupView(title: L("general.section.gestures")) {
-                    ToggleRowView(label: L("general.gesturesEnabled"), hint: L("general.gesturesEnabledHint"), isOn: $configStore.preferences.gesturesEnabled)
+                    ToggleRowView(label: L("general.gesturesEnabled"), isOn: $configStore.preferences.gesturesEnabled)
                 }
 
                 FormGroupView(title: L("general.section.permissions")) {
@@ -35,6 +33,7 @@ struct GeneralSettingsView: View {
                     Color(nsColor: .separatorColor).frame(height: 0.5).padding(.horizontal, 16)
                     PermissionRowView(
                         label: L("general.inputMonitoring"),
+                        hint: L("general.inputMonitoringHint"),
                         granted: inputMonitoringGranted,
                         showOpenButton: false
                     )
