@@ -37,7 +37,6 @@
 "gestures.gesturesEnabled"  = "ジェスチャーを有効";
 "gestures.column.gesture"   = "ジェスチャー";
 "gestures.column.shortcut"  = "ショートカット";
-"gestures.column.note"      = "メモ";
 "gestures.activeCount"      = "%d個の有効なバインディング";
 "gestures.selectApp"        = "左のリストからアプリを選択してください";
 "gestures.noBindings"       = "ジェスチャーバインディングがありません";

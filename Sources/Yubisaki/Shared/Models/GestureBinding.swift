@@ -6,15 +6,13 @@ struct GestureBinding: Codable, Sendable, Identifiable {
     var gesture: GestureType
     var keyCode: CGKeyCode
     var modifierFlags: UInt64
-    var note: String
     var enabled: Bool
 
-    init(gesture: GestureType, keyCode: CGKeyCode = 0, modifierFlags: UInt64 = 0, note: String = "", enabled: Bool = true) {
+    init(gesture: GestureType, keyCode: CGKeyCode = 0, modifierFlags: UInt64 = 0, enabled: Bool = true) {
         self.id = UUID()
         self.gesture = gesture
         self.keyCode = keyCode
         self.modifierFlags = modifierFlags
-        self.note = note
         self.enabled = enabled
     }
 
@@ -54,7 +52,7 @@ struct GestureBinding: Codable, Sendable, Identifiable {
     // MARK: - Codable (migration from v1 format: no id/note/enabled)
 
     private enum CodingKeys: String, CodingKey {
-        case id, gesture, keyCode, modifierFlags, note, enabled
+        case id, gesture, keyCode, modifierFlags, enabled
     }
 
     init(from decoder: any Decoder) throws {
@@ -63,7 +61,6 @@ struct GestureBinding: Codable, Sendable, Identifiable {
         gesture       = try c.decode(GestureType.self,         forKey: .gesture)
         keyCode       = try c.decode(CGKeyCode.self,           forKey: .keyCode)
         modifierFlags = try c.decode(UInt64.self,              forKey: .modifierFlags)
-        note          = try c.decodeIfPresent(String.self,     forKey: .note)          ?? ""
         enabled       = try c.decodeIfPresent(Bool.self,       forKey: .enabled)       ?? true
     }
 }

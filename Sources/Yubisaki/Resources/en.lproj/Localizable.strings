@@ -37,7 +37,6 @@
 "gestures.gesturesEnabled"  = "Gestures enabled";
 "gestures.column.gesture"   = "Gesture";
 "gestures.column.shortcut"  = "Shortcut";
-"gestures.column.note"      = "Note";
 "gestures.activeCount"      = "%d active bindings";
 "gestures.selectApp"        = "Select an app from the list on the left";
 "gestures.noBindings"       = "No gesture bindings";

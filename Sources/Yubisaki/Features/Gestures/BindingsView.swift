@@ -5,7 +5,6 @@ struct BindingsView: View {
     @Binding var profile: AppProfile
     @State private var selectedBindingID: UUID?
 
-    // 既に割り当て済みのジェスチャー。Picker で重複選択を無効化するのに使う。
     private var usedGestures: Set<GestureType> { Set(profile.bindings.map(\.gesture)) }
 
     var body: some View {
@@ -95,8 +94,6 @@ private struct ColumnHeaderRow: View {
                 .frame(width: 200, alignment: .leading)
             Text(L("gestures.column.shortcut"))
                 .frame(maxWidth: .infinity, alignment: .leading)
-            Text(L("gestures.column.note"))
-                .frame(maxWidth: .infinity, alignment: .leading)
         }
         .font(.caption2.weight(.bold))
         .tracking(0.3)
@@ -114,9 +111,6 @@ private struct BindingRowView: View {
     var isSelected: Bool
     var onSelect: () -> Void
 
-    @State private var noteText: String = ""
-    @FocusState private var noteIsFocused: Bool
-
     var body: some View {
         HStack(spacing: 12) {
             Toggle("", isOn: $binding.enabled)
@@ -133,7 +127,6 @@ private struct BindingRowView: View {
                         ) { gesture in
                             Label(gesture.displayName, systemImage: gesture.sfSymbol)
                                 .tag(gesture)
-                                // 自分の選択以外で、他バインディングが使用中のものは選べない
                                 .disabled(gesture != binding.gesture && usedGestures.contains(gesture))
                         }
                     }
@@ -145,30 +138,12 @@ private struct BindingRowView: View {
 
             KeyRecorderView(keyCode: $binding.keyCode, modifierFlags: $binding.modifierFlags)
                 .frame(maxWidth: .infinity, minHeight: 26, maxHeight: 28)
-
-            TextField(L("gestures.column.note"), text: $noteText)
-                .textFieldStyle(.plain)
-                .font(.callout)
-                .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity)
-                .focused($noteIsFocused)
-                .onChange(of: noteIsFocused) { _, focused in
-                    if !focused { binding.note = noteText }
-                }
-                .onChange(of: binding.note) { _, new in
-                    if !noteIsFocused { noteText = new }
-                }
         }
         .padding(.vertical, 6)
         .padding(.horizontal, 16)
         .background(isSelected ? Color.accentColor.opacity(0.12) : Color.clear)
         .contentShape(Rectangle())
         .simultaneousGesture(TapGesture().onEnded { onSelect() })
-        .onAppear { noteText = binding.note }
-        .onDisappear {
-            // フォーカス喪失前にウィンドウが閉じる/行が破棄される場合に編集中のメモを確定する。
-            if noteText != binding.note { binding.note = noteText }
-        }
     }
 }
 
@@ -178,7 +153,6 @@ private struct BindingsFooter: View {
     @Binding var profile: AppProfile
     @Binding var selectedBindingID: UUID?
 
-    // 全ジェスチャー種が割り当て済みなら追加できるものが無い。
     private var allGesturesUsed: Bool {
         Set(profile.bindings.map(\.gesture)).count >= GestureType.allCases.count
     }
