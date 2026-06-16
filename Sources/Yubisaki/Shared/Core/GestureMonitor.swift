@@ -7,9 +7,13 @@ private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "yubisaki
 
 extension CGEventType {
     static let magnify = CGEventType(rawValue: 29)!
+    /// 4本指タップなどの汎用ジェスチャーイベント
+    static let gesture = CGEventType(rawValue: 30)!
 }
 
-private let kMagnifyEventMask = CGEventMask(1 << CGEventType.magnify.rawValue)
+private let kGestureEventMask =
+    CGEventMask(1 << CGEventType.magnify.rawValue) |
+    CGEventMask(1 << CGEventType.gesture.rawValue)
 
 final class GestureMonitor: @unchecked Sendable {
     var onGestureDetected: ((GestureType) -> Void)?
@@ -28,7 +32,7 @@ final class GestureMonitor: @unchecked Sendable {
             tap: .cghidEventTap,
             place: .headInsertEventTap,
             options: .defaultTap,
-            eventsOfInterest: kMagnifyEventMask,
+            eventsOfInterest: kGestureEventMask,
             callback: Self.eventTapCallback,
             userInfo: Unmanaged.passUnretained(self).toOpaque()
         ) else {
@@ -80,6 +84,10 @@ final class GestureMonitor: @unchecked Sendable {
             return Unmanaged.passUnretained(event)
         }
 
+        if type == .gesture {
+            return GestureMonitor.handleGestureEvent(event: event, monitor: monitor)
+        }
+
         // cghidEventTap は magnify 以外の内部イベント（type 0xFFFFFFFF 等）も届くことがある。
         // NSEvent(cgEvent:) に未知の type を渡すと NSInternalInconsistencyException が発生するため、
         // CGEvent レベルで先にフィルタする。
@@ -124,6 +132,18 @@ final class GestureMonitor: @unchecked Sendable {
         }
 
         return nil  // consume event
+    }
+
+    // MARK: - 4本指タップ（CGEvent type 30）
+
+    // type 30 は NSEvent が認識しない非公開 CGEventType。
+    // 4本指タップごとに 1 回届くことを実機で確認済み。
+    private static func handleGestureEvent(event: CGEvent, monitor: GestureMonitor) -> Unmanaged<CGEvent> {
+        DispatchQueue.main.async {
+            logger.debug("fourTap detected")
+            monitor.onGestureDetected?(.fourTap)
+        }
+        return Unmanaged.passRetained(event)  // システムのデフォルト動作を温存
     }
 
     deinit {
