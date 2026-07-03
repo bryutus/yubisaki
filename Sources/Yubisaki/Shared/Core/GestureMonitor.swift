@@ -15,6 +15,9 @@ private let kGestureEventMask =
     CGEventMask(1 << CGEventType.magnify.rawValue) |
     CGEventMask(1 << CGEventType.gesture.rawValue)
 
+/// CGEvent をタップコールバックスレッドからメインスレッドへ運ぶためのラッパー
+private struct UncheckedSendableCGEvent: @unchecked Sendable { let event: CGEvent }
+
 final class GestureMonitor: @unchecked Sendable {
     var onGestureDetected: ((GestureType) -> Void)?
     /// Called synchronously from the event tap background thread at gesture start.
@@ -23,6 +26,8 @@ final class GestureMonitor: @unchecked Sendable {
 
     private var eventTap: CFMachPort?
     private var tapRunLoop: CFRunLoop?
+    /// チップタップ検出の状態機械（メインスレッドからのみ触る）
+    private let tipTapRecognizer = TipTapRecognizer()
     // Accessed only from the event tap callback thread.
     private var accumulatedMagnification: Double = 0
     private var isHandlingCurrentGesture: Bool = false
@@ -93,6 +98,9 @@ final class GestureMonitor: @unchecked Sendable {
         // CGEvent レベルで先にフィルタする。
         guard type == .magnify else { return Unmanaged.passRetained(event) }
 
+        // チップタップ検出: type 29 のタッチ情報はメインスレッドで抽出する（パススルー）
+        monitor.forwardTouchEvent(event)
+
         guard let nsEvent = NSEvent(cgEvent: event),
               nsEvent.type == .magnify else {
             return Unmanaged.passRetained(event)
@@ -103,6 +111,12 @@ final class GestureMonitor: @unchecked Sendable {
         if phase.contains(.began) {
             monitor.isHandlingCurrentGesture = monitor.shouldHandleGesture?() ?? false
             monitor.accumulatedMagnification = 0
+            // ピンチ開始でチップタップの候補をキャンセル（誤発火保険）
+            DispatchQueue.main.async {
+                MainActor.assumeIsolated {
+                    monitor.tipTapRecognizer.interrupt()
+                }
+            }
         }
 
         guard monitor.isHandlingCurrentGesture else {
@@ -134,6 +148,39 @@ final class GestureMonitor: @unchecked Sendable {
         return nil  // consume event
     }
 
+    // MARK: - チップタップ（CGEvent type 29 のタッチ情報）
+
+    // CGEventTap コールバックスレッドから呼ばれる。
+    // NSEvent 変換はメインスレッド専用のため、CGEvent を包んで async で運ぶ
+    // （メインキューは直列なのでイベント順序は保たれる。
+    //   チップタップはパススルー型で同期的な消費判定が不要なので async でよい。
+    //   sync はタップのタイムアウト無効化を招くため使わない）。
+    private func forwardTouchEvent(_ event: CGEvent) {
+        let boxed = UncheckedSendableCGEvent(event: event.copy() ?? event)
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            MainActor.assumeIsolated {
+                self.processTouchEvent(boxed.event)
+            }
+        }
+    }
+
+    @MainActor
+    private func processTouchEvent(_ event: CGEvent) {
+        // タッチ情報を運ぶ NSEvent は .gesture のみ（実機で確認済み。magnify/pressure 等は常に空）
+        guard let nsEvent = NSEvent(cgEvent: event),
+              nsEvent.type == .gesture else {
+            return
+        }
+        let snapshots = nsEvent.allTouches().compactMap { TouchSnapshot(touch: $0) }
+        // タッチ情報を持たない .gesture イベントも混ざるため、空は無視する
+        guard !snapshots.isEmpty else { return }
+        if let gesture = tipTapRecognizer.recognize(touches: snapshots, timestamp: nsEvent.timestamp) {
+            logger.debug("Tip tap recognized: \(String(describing: gesture), privacy: .public)")
+            onGestureDetected?(gesture)
+        }
+    }
+
     // MARK: - 4本指タップ（CGEvent type 30）
 
     // type 30 は NSEvent が認識しない非公開 CGEventType。
@@ -148,5 +195,26 @@ final class GestureMonitor: @unchecked Sendable {
 
     deinit {
         stopMonitoring()
+    }
+}
+
+private extension TouchSnapshot {
+    /// NSTouch からスナップショットへ変換する。未知の phase は nil
+    init?(touch: NSTouch) {
+        let phase: TouchSnapshot.Phase
+        switch touch.phase {
+        case .began:      phase = .began
+        case .moved:      phase = .moved
+        case .stationary: phase = .stationary
+        case .ended:      phase = .ended
+        case .cancelled:  phase = .cancelled
+        default:          return nil
+        }
+        self.init(
+            id: String(describing: touch.identity),
+            phase: phase,
+            x: touch.normalizedPosition.x,
+            y: touch.normalizedPosition.y
+        )
     }
 }

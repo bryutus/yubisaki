@@ -12,6 +12,12 @@ let package = Package(
             resources: [.process("Resources")],
             swiftSettings: [.swiftLanguageMode(.v6)],
             linkerSettings: [.linkedFramework("ServiceManagement")]
+        ),
+        .testTarget(
+            name: "YubisakiTests",
+            dependencies: ["Yubisaki"],
+            path: "Tests/YubisakiTests",
+            swiftSettings: [.swiftLanguageMode(.v6)]
         )
     ]
 )
