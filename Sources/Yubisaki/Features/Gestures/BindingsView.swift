@@ -7,6 +7,23 @@ struct BindingsView: View {
 
     private var usedGestures: Set<GestureType> { Set(profile.bindings.map(\.gesture)) }
 
+    /// 発火する順序（`ConfigStore.binding(for:gesture:)` は先勝ち）で、
+    /// 既に先に有効なバインディングがあるために発火しないバインディングの id。
+    /// Picker は新規の重複割り当てを防ぐが、config.json の手動編集等で
+    /// 既存データに重複が紛れ込んだ場合はここで可視化する。
+    private var shadowedBindingIDs: Set<UUID> {
+        var seenGestures: Set<GestureType> = []
+        var shadowed: Set<UUID> = []
+        for binding in profile.bindings where binding.enabled && binding.keyCode != 0 {
+            if seenGestures.contains(binding.gesture) {
+                shadowed.insert(binding.id)
+            } else {
+                seenGestures.insert(binding.gesture)
+            }
+        }
+        return shadowed
+    }
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
@@ -29,6 +46,7 @@ struct BindingsView: View {
                             BindingRowView(
                                 binding: $binding,
                                 usedGestures: usedGestures,
+                                isShadowed: shadowedBindingIDs.contains(binding.id),
                                 isSelected: selectedBindingID == binding.id,
                                 onSelect: { selectedBindingID = binding.id }
                             )
@@ -90,6 +108,7 @@ private struct ColumnHeaderRow: View {
     var body: some View {
         HStack(spacing: 12) {
             Color.clear.frame(width: 14, height: 1)
+            Color.clear.frame(width: 14, height: 1)
             Text(L("gestures.column.gesture"))
                 .frame(width: 200, alignment: .leading)
             Text(L("gestures.column.shortcut"))
@@ -108,6 +127,7 @@ private struct ColumnHeaderRow: View {
 private struct BindingRowView: View {
     @Binding var binding: GestureBinding
     var usedGestures: Set<GestureType>
+    var isShadowed: Bool
     var isSelected: Bool
     var onSelect: () -> Void
 
@@ -117,6 +137,16 @@ private struct BindingRowView: View {
                 .toggleStyle(.checkbox)
                 .labelsHidden()
                 .frame(width: 14)
+
+            Group {
+                if isShadowed {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.orange)
+                        .help(L("gestures.conflict"))
+                        .accessibilityLabel(L("gestures.conflict"))
+                }
+            }
+            .frame(width: 14)
 
             Picker("", selection: $binding.gesture) {
                 ForEach(GestureGroup.allCases, id: \.self) { group in
