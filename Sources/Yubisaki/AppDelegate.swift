@@ -33,6 +33,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             guard let binding = ConfigStore.shared.binding(for: bundleID, gesture: gesture) else { return }
             logger.info("Sending \(String(describing: gesture), privacy: .public) → keyCode \(binding.keyCode) to \(bundleID, privacy: .public)")
             KeySender.send(keyCode: binding.keyCode, flags: binding.eventFlags)
+            if ConfigStore.shared.preferences.hudEnabled {
+                HUDManager.shared.present(gesture: gesture, shortcutDescription: binding.shortcutDescription)
+            }
         }
         monitor.startMonitoring()
         gestureMonitor = monitor

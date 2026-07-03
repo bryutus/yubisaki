@@ -26,6 +26,8 @@ struct GeneralSettingsView: View {
 
                 FormGroupView(title: L("general.section.gestures")) {
                     ToggleRowView(label: L("general.gesturesEnabled"), isOn: $configStore.preferences.gesturesEnabled)
+                    Color(nsColor: .separatorColor).frame(height: 0.5).padding(.horizontal, 16)
+                    ToggleRowView(label: L("general.hudEnabled"), isOn: $configStore.preferences.hudEnabled)
                 }
 
                 FormGroupView(title: L("general.section.permissions")) {

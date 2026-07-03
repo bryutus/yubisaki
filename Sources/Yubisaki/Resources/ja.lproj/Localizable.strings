@@ -52,6 +52,7 @@
 "general.launchAtLogin"         = "ログイン時にyubisakiを起動";
 "general.showInDock"            = "Dockに表示";
 "general.gesturesEnabled"       = "ジェスチャーを有効化";
+"general.hudEnabled"            = "実行したショートカットを画面に表示";
 "general.section.gestures"      = "ジェスチャー";
 "general.section.permissions"   = "アクセス権限";
 "general.accessibility"         = "アクセシビリティ";

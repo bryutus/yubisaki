@@ -17,10 +17,11 @@ struct GlobalPreferences: Codable, Sendable, Equatable {
     var gesturesEnabled: Bool = true
     var launchAtLogin: Bool = false
     var showInDock: Bool = false
+    var hudEnabled: Bool = true
 
     // Migration from future format changes
     private enum CodingKeys: String, CodingKey {
-        case gesturesEnabled, launchAtLogin, showInDock
+        case gesturesEnabled, launchAtLogin, showInDock, hudEnabled
     }
 
     init(from decoder: any Decoder) throws {
@@ -28,6 +29,7 @@ struct GlobalPreferences: Codable, Sendable, Equatable {
         gesturesEnabled = try c.decodeIfPresent(Bool.self, forKey: .gesturesEnabled) ?? true
         launchAtLogin   = try c.decodeIfPresent(Bool.self, forKey: .launchAtLogin)   ?? false
         showInDock      = try c.decodeIfPresent(Bool.self, forKey: .showInDock)       ?? false
+        hudEnabled      = try c.decodeIfPresent(Bool.self, forKey: .hudEnabled)       ?? true
     }
 
     init() {}
