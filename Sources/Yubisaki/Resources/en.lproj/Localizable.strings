@@ -42,6 +42,7 @@
 "gestures.noBindings"       = "No gesture bindings";
 "gestures.addBinding"       = "Add binding";
 "gestures.deleteBinding"    = "Delete binding";
+"gestures.conflict"         = "This gesture duplicates an earlier binding and won't fire";
 
 /* Shortcut Field */
 "shortcut.clickToRecord" = "Click to record";

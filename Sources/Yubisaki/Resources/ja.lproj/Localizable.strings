@@ -42,6 +42,7 @@
 "gestures.noBindings"       = "ジェスチャーバインディングがありません";
 "gestures.addBinding"       = "バインディングを追加";
 "gestures.deleteBinding"    = "バインディングを削除";
+"gestures.conflict"         = "このジェスチャーは上のバインディングと重複しているため発火しません";
 
 /* Shortcut Field */
 "shortcut.clickToRecord" = "クリックして記録";
