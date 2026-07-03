@@ -52,6 +52,7 @@
 "general.launchAtLogin"         = "Launch yubisaki at login";
 "general.showInDock"            = "Show in Dock";
 "general.gesturesEnabled"       = "Gestures enabled";
+"general.hudEnabled"            = "Show shortcut on screen";
 "general.section.gestures"      = "Gestures";
 "general.section.permissions"   = "Permissions";
 "general.accessibility"         = "Accessibility";
