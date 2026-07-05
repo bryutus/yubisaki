@@ -49,6 +49,21 @@ final class ConfigStore: @unchecked Sendable {
     var profiles: [AppProfile] = []
     var preferences = GlobalPreferences()
 
+    /// 設定ファイルの保存先ベースディレクトリ。既定は
+    /// `~/Library/Application Support/yubisaki`。テストでは一時ディレクトリを注入する。
+    @ObservationIgnored
+    private let baseURL: URL
+
+    /// - Parameter baseDirectory: 設定ファイルの保存先。省略時は Application Support 配下。
+    init(baseDirectory: URL = ConfigStore.defaultBaseDirectory) {
+        self.baseURL = baseDirectory
+    }
+
+    private static var defaultBaseDirectory: URL {
+        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        return appSupport.appending(component: "yubisaki")
+    }
+
     @ObservationIgnored
     private let gestureSnapshotLock = OSAllocatedUnfairLock(initialState: GestureSnapshot())
 
@@ -70,11 +85,6 @@ final class ConfigStore: @unchecked Sendable {
             globalHasPinchBinding: hasUsablePinchBinding(globalProfile)
         )
         gestureSnapshotLock.withLock { $0 = snapshot }
-    }
-
-    private var baseURL: URL {
-        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        return appSupport.appending(component: "yubisaki")
     }
 
     private var profilesURL: URL { baseURL.appending(component: "config.json") }
