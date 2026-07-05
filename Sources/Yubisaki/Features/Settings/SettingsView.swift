@@ -30,13 +30,33 @@ private struct SettingsWindowStyle: NSViewRepresentable {
     // layout/transaction pass — doing them inline throws during the CATransaction flush.
     private final class WindowConfiguringView: NSView {
         private var didConfigure = false
+        nonisolated(unsafe) private var closeObserver: NSObjectProtocol?
 
         override func viewDidMoveToWindow() {
             super.viewDidMoveToWindow()
-            guard window != nil, !didConfigure else { return }
+            guard let window, !didConfigure else { return }
             didConfigure = true
             DispatchQueue.main.async { [weak self] in
                 MainActor.assumeIsolated { self?.applyChrome() }
+            }
+            // 設定ウィンドウの表示中だけ .regular に切り替えている（MenuBarContentView 参照）
+            // ため、閉じたら Dock 表示設定に合わせてポリシーを戻す
+            closeObserver = NotificationCenter.default.addObserver(
+                forName: NSWindow.willCloseNotification,
+                object: window,
+                queue: .main
+            ) { _ in
+                MainActor.assumeIsolated {
+                    if !ConfigStore.shared.preferences.showInDock {
+                        NSApp.setActivationPolicy(.accessory)
+                    }
+                }
+            }
+        }
+
+        deinit {
+            if let closeObserver {
+                NotificationCenter.default.removeObserver(closeObserver)
             }
         }
 

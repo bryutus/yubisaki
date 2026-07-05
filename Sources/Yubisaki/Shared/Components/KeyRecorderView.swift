@@ -30,6 +30,7 @@ final class KeyRecorderNSView: NSView {
     private var pendingModifiers: NSEvent.ModifierFlags = [] { didSet { needsDisplay = true } }
     nonisolated(unsafe) private var blinkTimer: Timer?
     nonisolated(unsafe) private var localKeyMonitor: Any?
+    nonisolated(unsafe) private var windowResignObserver: NSObjectProtocol?
     private var blinkOn = true
 
     override var acceptsFirstResponder: Bool { true }
@@ -48,6 +49,13 @@ final class KeyRecorderNSView: NSView {
         if isRecording {
             window?.makeFirstResponder(nil)
         } else {
+            // アプリが非アクティブのまま記録を始めると、キーイベントは前面アプリへ
+            // 流れてしまう（アクセサリアプリでは設定ウィンドウが見えていても
+            // アクティブとは限らない）。必ずアクティブ化してから記録に入る。
+            if !NSApp.isActive {
+                NSApp.activate(ignoringOtherApps: true)
+            }
+            window?.makeKeyAndOrderFront(nil)
             window?.makeFirstResponder(self)
         }
     }
@@ -64,6 +72,18 @@ final class KeyRecorderNSView: NSView {
             self.keyDown(with: event)
             return nil
         }
+        // ウィンドウがキーでなくなったらキーは前面アプリへ流れるため、記録を終了して
+        // 「記録中に見えるのに入力できない」状態を防ぐ
+        windowResignObserver = NotificationCenter.default.addObserver(
+            forName: NSWindow.didResignKeyNotification,
+            object: window,
+            queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let self, self.isRecording else { return }
+                self.window?.makeFirstResponder(nil)
+            }
+        }
         return true
     }
 
@@ -75,6 +95,10 @@ final class KeyRecorderNSView: NSView {
         if let monitor = localKeyMonitor {
             NSEvent.removeMonitor(monitor)
             localKeyMonitor = nil
+        }
+        if let observer = windowResignObserver {
+            NotificationCenter.default.removeObserver(observer)
+            windowResignObserver = nil
         }
         return true
     }
