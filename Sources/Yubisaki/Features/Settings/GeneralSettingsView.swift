@@ -20,13 +20,13 @@ struct GeneralSettingsView: View {
             VStack(alignment: .leading, spacing: 0) {
                 FormGroupView(topPadding: 2) {
                     ToggleRowView(label: L("general.launchAtLogin"), isOn: $configStore.preferences.launchAtLogin)
-                    Color(nsColor: .separatorColor).frame(height: 0.5).padding(.horizontal, 16)
+                    FormRowDivider()
                     ToggleRowView(label: L("general.showInDock"), isOn: $configStore.preferences.showInDock)
                 }
 
                 FormGroupView(title: L("general.section.gestures")) {
                     ToggleRowView(label: L("general.gesturesEnabled"), isOn: $configStore.preferences.gesturesEnabled)
-                    Color(nsColor: .separatorColor).frame(height: 0.5).padding(.horizontal, 16)
+                    FormRowDivider()
                     ToggleRowView(label: L("general.hudEnabled"), isOn: $configStore.preferences.hudEnabled)
                 }
 
@@ -37,7 +37,7 @@ struct GeneralSettingsView: View {
                         granted: accessibilityGranted,
                         showOpenButton: true
                     )
-                    Color(nsColor: .separatorColor).frame(height: 0.5).padding(.horizontal, 16)
+                    FormRowDivider()
                     PermissionRowView(
                         label: L("general.inputMonitoring"),
                         hint: L("general.inputMonitoringHint"),
@@ -132,12 +132,7 @@ private struct FormGroupView<Content: View>: View {
             VStack(spacing: 0) {
                 content()
             }
-            .background(Color(nsColor: .controlBackgroundColor))
-            .clipShape(RoundedRectangle(cornerRadius: 10))
-            .overlay(
-                RoundedRectangle(cornerRadius: 10)
-                    .stroke(.separator.opacity(0.6), lineWidth: 0.5)
-            )
+            .formCardStyle()
         }
         .padding(.horizontal, 20)
         .padding(.top, topPadding)

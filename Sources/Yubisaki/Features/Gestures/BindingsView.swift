@@ -16,7 +16,7 @@ struct BindingsView: View {
 
                 VStack(spacing: 0) {
                     ColumnHeaderRow()
-                    Color(nsColor: .separatorColor).frame(height: 0.5).padding(.horizontal, 16)
+                    FormRowDivider()
                     if profile.bindings.isEmpty {
                         Text(L("gestures.noBindings"))
                             .foregroundStyle(.secondary)
@@ -31,17 +31,12 @@ struct BindingsView: View {
                                 isSelected: selectedBindingID == binding.id,
                                 onSelect: { selectedBindingID = binding.id }
                             )
-                            Color(nsColor: .separatorColor).frame(height: 0.5).padding(.horizontal, 16)
+                            FormRowDivider()
                         }
                     }
                 }
                 .opacity(profile.enabled ? 1.0 : 0.55)
-                .background(Color(nsColor: .controlBackgroundColor))
-                .clipShape(RoundedRectangle(cornerRadius: 10))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 10)
-                        .stroke(.separator.opacity(0.6), lineWidth: 0.5)
-                )
+                .formCardStyle()
             }
             .padding(.horizontal, 16)
             .padding(.top, 2)
