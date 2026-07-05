@@ -225,4 +225,41 @@ struct MultiFingerTapRecognizerTests {
             timestamp: 0.10)
         #expect(result == .threeTap)
     }
+
+    // MARK: - 平均移動ベクトル（短いスワイプとの区別）
+
+    @Test func 全指が同方向に僅かに動くと発火しない() {
+        // 各指の移動量は movementTolerance 未満だが、全指が同方向（上）に動いている
+        // = 短いスワイプの開始。システムのスワイプ判定は個別の許容量より鋭敏なため、
+        // 平均移動ベクトルで棄却する
+        let recognizer = MultiFingerTapRecognizer()
+        let dy = M.coherentMovementTolerance + 0.005  // 個別許容量 0.03 未満・平均許容量超
+        var result = recognizer.recognize(
+            touches: (0..<4).map { touch("f\($0)", .began, x: x(forFinger: $0), y: 0.5) },
+            timestamp: 0)
+        #expect(result == nil)
+        result = recognizer.recognize(
+            touches: (0..<4).map { touch("f\($0)", .moved, x: x(forFinger: $0), y: 0.5 + dy) },
+            timestamp: 0.06)
+        #expect(result == nil)
+        result = recognizer.recognize(
+            touches: (0..<4).map { touch("f\($0)", .ended, x: x(forFinger: $0), y: 0.5 + dy) },
+            timestamp: 0.12)
+        #expect(result == nil)
+    }
+
+    @Test func 方向がばらけた手ブレなら発火する() {
+        // 各指が別方向に僅かに動く（タップ時の自然な手ブレ）。平均は相殺されるので発火する
+        let recognizer = MultiFingerTapRecognizer()
+        let d = M.coherentMovementTolerance + 0.005
+        let jitterY: [Double] = [d, -d, d, -d]  // 上下交互 → 平均 0
+        var result = recognizer.recognize(
+            touches: (0..<4).map { touch("f\($0)", .began, x: x(forFinger: $0), y: 0.5) },
+            timestamp: 0)
+        #expect(result == nil)
+        result = recognizer.recognize(
+            touches: (0..<4).map { touch("f\($0)", .ended, x: x(forFinger: $0), y: 0.5 + jitterY[$0]) },
+            timestamp: 0.10)
+        #expect(result == .fourTap)
+    }
 }

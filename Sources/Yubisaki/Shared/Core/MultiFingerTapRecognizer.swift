@@ -16,6 +16,11 @@ final class MultiFingerTapRecognizer {
     static let maxTapDuration: TimeInterval = 0.35
     /// 各指の許容移動量（正規化座標、スワイプ・スクロールとの区別）
     static let movementTolerance: Double = 0.03
+    /// 全指の平均移動ベクトルの許容量（正規化座標）。タップの手ブレは方向がばらけて
+    /// 平均が相殺されるが、スワイプは全指が同方向に動くため僅かな移動でも平均に残る。
+    /// システムのスワイプ判定は movementTolerance より鋭敏に反応するため、
+    /// 個別の移動量チェックだけでは短いスワイプをタップと誤判定しうる
+    static let coherentMovementTolerance: Double = 0.015
 
     // MARK: - 内部状態
 
@@ -82,6 +87,9 @@ final class MultiFingerTapRecognizer {
             } else if tracked.values.contains(where: { $0.displacement > Self.movementTolerance }) {
                 // いずれかの指が動いた（スワイプ・スクロール・ピンチ）
                 state = .invalid
+            } else if meanMovementMagnitude > Self.coherentMovementTolerance {
+                // 全指が同方向に動いている（短いスワイプの開始）
+                state = .invalid
             } else if elapsed > Self.maxTapDuration {
                 // 接地が長すぎる（ホールド）。全指離脱済みでも発火させない
                 state = .invalid
@@ -110,6 +118,15 @@ final class MultiFingerTapRecognizer {
     /// ピンチ開始など、外部要因で認識を中断する（接地中の指があれば全指離脱まで失格扱い）
     func interrupt() {
         state = tracked.isEmpty ? .idle : .invalid
+    }
+
+    /// 全指の移動ベクトルの平均の大きさ（正規化座標）
+    private var meanMovementMagnitude: Double {
+        guard !tracked.isEmpty else { return 0 }
+        let n = Double(tracked.count)
+        let meanDX = tracked.values.reduce(0) { $0 + ($1.lastX - $1.startX) } / n
+        let meanDY = tracked.values.reduce(0) { $0 + ($1.lastY - $1.startY) } / n
+        return (meanDX * meanDX + meanDY * meanDY).squareRoot()
     }
 
     // MARK: - タッチ追跡
