@@ -3,15 +3,16 @@ import AppKit
 
 /// ジェスチャー検出時に表示するHUDの中身。
 struct HUDView: View {
-    let symbolName: String
+    let icon: Image
     let title: String
     let shortcut: String
 
     var body: some View {
         HStack(spacing: 12) {
-            Image(systemName: symbolName)
-                .font(.system(size: 24, weight: .medium))
-                .frame(width: 28)
+            icon
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 28, height: 28)
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(.callout.weight(.semibold))

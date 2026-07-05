@@ -23,7 +23,7 @@ final class HUDManager {
         self.panel = panel
 
         let hostingView = NSHostingView(
-            rootView: HUDView(symbolName: gesture.sfSymbol, title: gesture.displayName, shortcut: shortcutDescription)
+            rootView: HUDView(icon: templateIcon(named: gesture.iconName, pointSize: 28), title: gesture.displayName, shortcut: shortcutDescription)
         )
         panel.contentView = hostingView
         hostingView.layoutSubtreeIfNeeded()

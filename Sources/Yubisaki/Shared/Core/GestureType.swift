@@ -36,14 +36,15 @@ enum GestureType: Codable, Sendable, Hashable, CaseIterable {
 
     var displayName: String { L(localizationKey) }
 
-    var sfSymbol: String {
+    /// `Sources/Yubisaki/Resources/Icons/` 内の独自アイコン画像名（`scripts/make-gesture-icons.swift` で生成）
+    var iconName: String {
         switch self {
-        case .pinchIn:         return "arrow.down.right.and.arrow.up.left"
-        case .pinchOut:        return "arrow.up.left.and.arrow.down.right"
-        case .twoTipTapLeft:   return "hand.tap"
-        case .twoTipTapRight:  return "hand.tap"
-        case .threeTap:        return "3.circle"
-        case .fourTap:         return "4.circle"
+        case .pinchIn:         return "pinchIn"
+        case .pinchOut:        return "pinchOut"
+        case .twoTipTapLeft:   return "twoTipTapLeft"
+        case .twoTipTapRight:  return "twoTipTapRight"
+        case .threeTap:        return "threeTap"
+        case .fourTap:         return "fourTap"
         }
     }
 
