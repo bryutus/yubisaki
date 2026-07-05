@@ -34,8 +34,9 @@ final class TipTapRecognizer {
     static let restMovementTolerance: Double = 0.05
     /// 左右判定に必要な最小X距離（曖昧なタップの誤発火防止）
     static let minHorizontalSeparation: Double = 0.08
-    /// 発火後の再発火抑止時間
-    static let cooldown: TimeInterval = 0.25
+    /// 発火後の再発火抑止時間。指のバウンド等による二重発火だけを防げばよいので、
+    /// 意図的な連続チップタップ（最速でも 0.15s 間隔程度）を妨げない短さにする
+    static let cooldown: TimeInterval = 0.10
 
     // MARK: - 内部状態
 
@@ -115,10 +116,10 @@ final class TipTapRecognizer {
                 let cooldownElapsed = lastEmittedAt.map { timestamp - $0 >= Self.cooldown } ?? true
                 if restDuration >= Self.minRestDuration && cooldownElapsed {
                     state = .candidate(restID: restID, tapID: tapID)
-                } else {
-                    // 置き指の接地が浅すぎる（同時タップ）か、発火直後の連打
-                    state = .invalid
                 }
+                // 条件を満たさないタップ（置き指と同時着地・cooldown 中の連打）は候補にせず
+                // 無視する。invalid にすると全指離脱まで復帰できず、置き指を残したままの
+                // 連続チップタップが2打目以降できなくなるため、置き指状態を維持する。
             }
 
         case .candidate(let restID, let tapID):
@@ -135,6 +136,13 @@ final class TipTapRecognizer {
                         && separation >= Self.minHorizontalSeparation {
                         emitted = tap.startX < rest.lastX ? .twoTipTapLeft : .twoTipTapRight
                         lastEmittedAt = timestamp
+                        // 置き指の基準位置を現在位置で取り直す。連続チップタップ中の
+                        // わずかなドリフトが累積して失格（置き指が動いた扱い）になるのを防ぐ
+                        tracked[restID] = TrackedTouch(
+                            startTime: rest.startTime,
+                            startX: rest.lastX, startY: rest.lastY,
+                            lastX: rest.lastX, lastY: rest.lastY
+                        )
                     }
                     // 発火の有無によらず、置き指が残っているので連続チップタップに備える
                     state = .resting(restID: restID)
