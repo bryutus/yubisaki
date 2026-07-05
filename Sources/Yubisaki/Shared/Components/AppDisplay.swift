@@ -2,7 +2,7 @@ import AppKit
 import SwiftUI
 
 /// bundleID からアプリの表示名・アイコンを解決する。NSWorkspace の解決結果はメイン上でキャッシュ
-/// する（body 評価ごとの再解決を避ける）。"global" は特別扱いし、専用の表示にフォールバックする。
+/// する（body 評価ごとの再解決を避ける）。"global" は特別扱いし、yubisaki自身のアプリアイコンを表示する。
 @MainActor
 enum AppDisplay {
     static let globalBundleID = "global"
@@ -16,13 +16,19 @@ enum AppDisplay {
     }
 
     static func icon(for bundleID: String) -> NSImage? {
-        guard bundleID != globalBundleID else { return nil }
+        if bundleID == globalBundleID { return appIcon }
         if let cached = iconCache[bundleID] { return cached }
         guard let url = url(for: bundleID) else { return nil }
         let icon = NSWorkspace.shared.icon(forFile: url.path)
         iconCache[bundleID] = icon
         return icon
     }
+
+    /// 「すべてのアプリ」行にはyubisaki自身のアプリアイコンを表示する
+    private static let appIcon: NSImage? = {
+        guard let url = resourceBundle.url(forResource: "AppIcon", withExtension: "png") else { return nil }
+        return NSImage(contentsOf: url)
+    }()
 
     private static func url(for bundleID: String) -> URL? {
         if let cached = urlCache[bundleID] { return cached }
@@ -32,7 +38,7 @@ enum AppDisplay {
     }
 }
 
-/// アプリアイコン。解決できない場合と "global" はプレースホルダを表示する。
+/// アプリアイコン。"global" はyubisaki自身のアイコン、解決できない場合はプレースホルダを表示する。
 /// サイドバー行と詳細ヘッダーで共用する。
 struct AppIconView: View {
     let bundleID: String

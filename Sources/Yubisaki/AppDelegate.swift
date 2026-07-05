@@ -10,6 +10,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var appWatcher: AppWatcher?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        applyAppIcon()
         PermissionManager.requestAuthorization()
         ConfigStore.shared.load()
         applyStartupPreferences()
@@ -39,6 +40,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         monitor.startMonitoring()
         gestureMonitor = monitor
+    }
+
+    // `swift run` 等 .app バンドル化されない開発時実行では Info.plist の CFBundleIconFile が
+    // 効かず、Dock・Cmd+Tab・強制終了ダイアログ等が汎用アイコンになる。実行時に明示設定して補う
+    // （配布用 .app では Info.plist 側の指定と同じ画像になるため無害）。
+    private func applyAppIcon() {
+        guard let url = resourceBundle.url(forResource: "AppIcon", withExtension: "png"),
+              let icon = NSImage(contentsOf: url)
+        else { return }
+        NSApp.applicationIconImage = icon
     }
 
     private func applyStartupPreferences() {
