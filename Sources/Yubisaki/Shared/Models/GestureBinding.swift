@@ -18,14 +18,12 @@ struct GestureBinding: Codable, Sendable, Identifiable {
 
     var eventFlags: CGEventFlags { CGEventFlags(rawValue: modifierFlags) }
 
+    /// 有効かつショートカット設定済み（keyCode != 0）で、実際に発火し得るバインディングかどうか。
+    var isUsable: Bool { enabled && keyCode != 0 }
+
     var shortcutDescription: String {
         guard keyCode != 0 else { return "" }
-        var parts: [String] = []
-        let flags = eventFlags
-        if flags.contains(.maskControl)   { parts.append("⌃") }
-        if flags.contains(.maskAlternate) { parts.append("⌥") }
-        if flags.contains(.maskShift)     { parts.append("⇧") }
-        if flags.contains(.maskCommand)   { parts.append("⌘") }
+        var parts = eventFlags.modifierSymbols
         parts.append(Self.keyCodeString(keyCode))
         return parts.joined()
     }
@@ -62,5 +60,17 @@ struct GestureBinding: Codable, Sendable, Identifiable {
         keyCode       = try c.decode(CGKeyCode.self,           forKey: .keyCode)
         modifierFlags = try c.decode(UInt64.self,              forKey: .modifierFlags)
         enabled       = try c.decodeIfPresent(Bool.self,       forKey: .enabled)       ?? true
+    }
+}
+
+extension CGEventFlags {
+    /// 修飾キーを ⌃⌥⇧⌘ の順で記号化したもの。ショートカット表示の組み立てに使う。
+    var modifierSymbols: [String] {
+        var syms: [String] = []
+        if contains(.maskControl)   { syms.append("⌃") }
+        if contains(.maskAlternate) { syms.append("⌥") }
+        if contains(.maskShift)     { syms.append("⇧") }
+        if contains(.maskCommand)   { syms.append("⌘") }
+        return syms
     }
 }

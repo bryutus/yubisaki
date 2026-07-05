@@ -28,9 +28,8 @@ final class GestureMonitor: @unchecked Sendable {
     private var tapRunLoop: CFRunLoop?
     /// チップタップ検出の状態機械（メインスレッドからのみ触る）
     private let tipTapRecognizer = TipTapRecognizer()
-    // Accessed only from the event tap callback thread.
-    private var accumulatedMagnification: Double = 0
-    private var isHandlingCurrentGesture: Bool = false
+    /// ピンチ検出の状態機械（イベントタップのコールバックスレッドからのみ触る）
+    private var pinchRecognizer = PinchRecognizer()
 
     func startMonitoring() {
         guard let tap = CGEvent.tapCreate(
@@ -109,8 +108,7 @@ final class GestureMonitor: @unchecked Sendable {
         let phase = nsEvent.phase
 
         if phase.contains(.began) {
-            monitor.isHandlingCurrentGesture = monitor.shouldHandleGesture?() ?? false
-            monitor.accumulatedMagnification = 0
+            monitor.pinchRecognizer.begin(handling: monitor.shouldHandleGesture?() ?? false)
             // ピンチ開始でチップタップの候補をキャンセル（誤発火保険）
             DispatchQueue.main.async {
                 MainActor.assumeIsolated {
@@ -119,30 +117,18 @@ final class GestureMonitor: @unchecked Sendable {
             }
         }
 
-        guard monitor.isHandlingCurrentGesture else {
+        guard monitor.pinchRecognizer.isHandling else {
             return Unmanaged.passRetained(event)
         }
 
-        let mag = nsEvent.magnification
-        switch phase {
-        case .changed:
-            monitor.accumulatedMagnification += mag
-        case .ended:
-            monitor.accumulatedMagnification += mag
-            let total = monitor.accumulatedMagnification
-            monitor.accumulatedMagnification = 0
-            monitor.isHandlingCurrentGesture = false
-            if let gesture = GestureRecognizer.recognize(magnitude: total) {
-                DispatchQueue.main.async {
-                    logger.debug("Gesture recognized: \(String(describing: gesture), privacy: .public)")
-                    monitor.onGestureDetected?(gesture)
-                }
+        if let recognizerPhase = PinchRecognizer.Phase(phase),
+           let gesture = monitor.pinchRecognizer.recognize(
+               phase: recognizerPhase, magnification: nsEvent.magnification
+           ) {
+            DispatchQueue.main.async {
+                logger.debug("Gesture recognized: \(String(describing: gesture), privacy: .public)")
+                monitor.onGestureDetected?(gesture)
             }
-        case .cancelled:
-            monitor.accumulatedMagnification = 0
-            monitor.isHandlingCurrentGesture = false
-        default:
-            break
         }
 
         return nil  // consume event
@@ -195,6 +181,19 @@ final class GestureMonitor: @unchecked Sendable {
 
     deinit {
         stopMonitoring()
+    }
+}
+
+private extension PinchRecognizer.Phase {
+    /// NSEvent.Phase から写像する。判定に関与しない phase（mayBegin / stationary 等）は nil
+    init?(_ phase: NSEvent.Phase) {
+        switch phase {
+        case .began:     self = .began
+        case .changed:   self = .changed
+        case .ended:     self = .ended
+        case .cancelled: self = .cancelled
+        default:         return nil
+        }
     }
 }
 

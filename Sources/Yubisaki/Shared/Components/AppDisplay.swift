@@ -5,18 +5,16 @@ import SwiftUI
 /// する（body 評価ごとの再解決を避ける）。"global" は特別扱いし、yubisaki自身のアプリアイコンを表示する。
 @MainActor
 enum AppDisplay {
-    static let globalBundleID = "global"
-
     private static var urlCache: [String: URL?] = [:]
     private static var iconCache: [String: NSImage] = [:]
 
     static func name(for bundleID: String) -> String {
-        if bundleID == globalBundleID { return L("sidebar.allApps") }
+        if bundleID == AppProfile.globalBundleID { return L("sidebar.allApps") }
         return url(for: bundleID)?.deletingPathExtension().lastPathComponent ?? bundleID
     }
 
     static func icon(for bundleID: String) -> NSImage? {
-        if bundleID == globalBundleID { return appIcon }
+        if bundleID == AppProfile.globalBundleID { return appIcon }
         if let cached = iconCache[bundleID] { return cached }
         guard let url = url(for: bundleID) else { return nil }
         let icon = NSWorkspace.shared.icon(forFile: url.path)

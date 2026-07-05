@@ -45,9 +45,24 @@ struct GlobalPreferences: Codable, Sendable, Equatable {
 final class ConfigStore: @unchecked Sendable {
     static let shared = ConfigStore()
 
-    var globalProfile = AppProfile(bundleID: "global")
+    var globalProfile = AppProfile(bundleID: AppProfile.globalBundleID)
     var profiles: [AppProfile] = []
     var preferences = GlobalPreferences()
+
+    /// 設定ファイルの保存先ベースディレクトリ。既定は
+    /// `~/Library/Application Support/yubisaki`。テストでは一時ディレクトリを注入する。
+    @ObservationIgnored
+    private let baseURL: URL
+
+    /// - Parameter baseDirectory: 設定ファイルの保存先。省略時は Application Support 配下。
+    init(baseDirectory: URL = ConfigStore.defaultBaseDirectory) {
+        self.baseURL = baseDirectory
+    }
+
+    private static var defaultBaseDirectory: URL {
+        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        return appSupport.appending(component: "yubisaki")
+    }
 
     @ObservationIgnored
     private let gestureSnapshotLock = OSAllocatedUnfairLock(initialState: GestureSnapshot())
@@ -61,7 +76,7 @@ final class ConfigStore: @unchecked Sendable {
     private func refreshGestureSnapshot() {
         func hasUsablePinchBinding(_ profile: AppProfile) -> Bool {
             profile.enabled && profile.bindings.contains {
-                ($0.gesture == .pinchIn || $0.gesture == .pinchOut) && $0.enabled && $0.keyCode != 0
+                ($0.gesture == .pinchIn || $0.gesture == .pinchOut) && $0.isUsable
             }
         }
         let snapshot = GestureSnapshot(
@@ -70,11 +85,6 @@ final class ConfigStore: @unchecked Sendable {
             globalHasPinchBinding: hasUsablePinchBinding(globalProfile)
         )
         gestureSnapshotLock.withLock { $0 = snapshot }
-    }
-
-    private var baseURL: URL {
-        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        return appSupport.appending(component: "yubisaki")
     }
 
     private var profilesURL: URL { baseURL.appending(component: "config.json") }
@@ -131,11 +141,11 @@ final class ConfigStore: @unchecked Sendable {
         // keyCode == 0 は「ショートカット未設定」。発火させると virtualKey 0 = 'A' を送って
         // しまうため、未設定のバインディングは一致対象から除外する。
         if let b = profiles.first(where: { $0.bundleID == bundleID && $0.enabled })?
-            .bindings.first(where: { $0.gesture == gesture && $0.enabled && $0.keyCode != 0 }) {
+            .bindings.first(where: { $0.gesture == gesture && $0.isUsable }) {
             return b
         }
         guard globalProfile.enabled else { return nil }
-        return globalProfile.bindings.first { $0.gesture == gesture && $0.enabled && $0.keyCode != 0 }
+        return globalProfile.bindings.first { $0.gesture == gesture && $0.isUsable }
     }
 
     // MARK: - Private
