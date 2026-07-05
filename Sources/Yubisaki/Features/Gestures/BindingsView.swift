@@ -5,31 +5,12 @@ struct BindingsView: View {
     @Binding var profile: AppProfile
     @State private var selectedBindingID: UUID?
 
-    private var usedGestures: Set<GestureType> { Set(profile.bindings.map(\.gesture)) }
-
-    /// 発火する順序（`ConfigStore.binding(for:gesture:)` は先勝ち）で、
-    /// 既に先に有効なバインディングがあるために発火しないバインディングの id。
-    /// Picker は新規の重複割り当てを防ぐが、config.json の手動編集等で
-    /// 既存データに重複が紛れ込んだ場合はここで可視化する。
-    private var shadowedBindingIDs: Set<UUID> {
-        var seenGestures: Set<GestureType> = []
-        var shadowed: Set<UUID> = []
-        for binding in profile.bindings where binding.enabled && binding.keyCode != 0 {
-            if seenGestures.contains(binding.gesture) {
-                shadowed.insert(binding.id)
-            } else {
-                seenGestures.insert(binding.gesture)
-            }
-        }
-        return shadowed
-    }
-
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
                 AppHeaderView(
                     bundleID: profile.bundleID,
-                    isGlobalProfile: profile.bundleID == "global",
+                    isGlobalProfile: profile.bundleID == AppProfile.globalBundleID,
                     enabled: $profile.enabled
                 )
 
@@ -45,8 +26,8 @@ struct BindingsView: View {
                         ForEach($profile.bindings) { $binding in
                             BindingRowView(
                                 binding: $binding,
-                                usedGestures: usedGestures,
-                                isShadowed: shadowedBindingIDs.contains(binding.id),
+                                usedGestures: profile.usedGestures,
+                                isShadowed: profile.shadowedBindingIDs.contains(binding.id),
                                 isSelected: selectedBindingID == binding.id,
                                 onSelect: { selectedBindingID = binding.id }
                             )
@@ -191,7 +172,7 @@ private struct BindingsFooter: View {
     @Binding var selectedBindingID: UUID?
 
     private var allGesturesUsed: Bool {
-        Set(profile.bindings.map(\.gesture)).count >= GestureType.allCases.count
+        profile.usedGestures.count >= GestureType.allCases.count
     }
 
     var body: some View {
@@ -215,7 +196,7 @@ private struct BindingsFooter: View {
     }
 
     private func addBinding() {
-        let used = Set(profile.bindings.map(\.gesture))
+        let used = profile.usedGestures
         guard let gesture = GestureType.allCases.first(where: { !used.contains($0) }) else { return }
         let newBinding = GestureBinding(gesture: gesture, enabled: false)
         profile.bindings.append(newBinding)

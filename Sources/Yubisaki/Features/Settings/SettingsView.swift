@@ -73,7 +73,7 @@ private struct SettingsWindowStyle: NSViewRepresentable {
 struct SettingsView: View {
     @Bindable var configStore: ConfigStore
     @State private var selectedTab: SettingsTab = .gestures
-    @State private var selectedBundleID: String? = "global"
+    @State private var selectedBundleID: String? = AppProfile.globalBundleID
 
     // Height of the unified titlebar; used to vertically center the tab title with the
     // traffic-light buttons.
@@ -113,10 +113,10 @@ struct SettingsView: View {
     private var appList: some View {
         List(selection: $selectedBundleID) {
             AppRowView(
-                bundleID: "global",
+                bundleID: AppProfile.globalBundleID,
                 enabledCount: configStore.globalProfile.bindings.filter(\.enabled).count
             )
-            .tag("global")
+            .tag(AppProfile.globalBundleID)
 
             ForEach(configStore.profiles) { profile in
                 AppRowView(
@@ -145,7 +145,7 @@ struct SettingsView: View {
                 }
                 .buttonStyle(.plain)
                 .padding(6)
-                .disabled(selectedBundleID == nil || selectedBundleID == "global")
+                .disabled(selectedBundleID == nil || selectedBundleID == AppProfile.globalBundleID)
                 .accessibilityLabel(L("sidebar.removeApp"))
 
                 Spacer()
@@ -168,7 +168,7 @@ struct SettingsView: View {
 
     @ViewBuilder
     private var detailPane: some View {
-        if selectedBundleID == "global" {
+        if selectedBundleID == AppProfile.globalBundleID {
             BindingsView(
                 profile: Binding(
                     get: { configStore.globalProfile },
@@ -224,7 +224,7 @@ struct SettingsView: View {
         guard let id = selectedBundleID else { return }
         configStore.profiles.removeAll { $0.bundleID == id }
         configStore.saveProfiles()
-        selectedBundleID = "global"
+        selectedBundleID = AppProfile.globalBundleID
     }
 }
 

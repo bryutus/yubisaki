@@ -220,22 +220,14 @@ final class KeyRecorderNSView: NSView {
         crossPath.stroke()
     }
 
+    // NSEvent.ModifierFlags の deviceIndependent なビットは CGEventFlags と同一値なので、
+    // keyDown(with:) と同じ変換で CGEventFlags.modifierSymbols に寄せる。
     private func modifierSymbols(for flags: NSEvent.ModifierFlags) -> [String] {
-        var syms: [String] = []
-        if flags.contains(.control) { syms.append("⌃") }
-        if flags.contains(.option)  { syms.append("⌥") }
-        if flags.contains(.shift)   { syms.append("⇧") }
-        if flags.contains(.command) { syms.append("⌘") }
-        return syms
+        CGEventFlags(rawValue: UInt64(flags.rawValue)).modifierSymbols
     }
 
     private func shortcutParts() -> [String] {
-        var parts: [String] = []
-        let flags = CGEventFlags(rawValue: currentFlags)
-        if flags.contains(.maskControl)   { parts.append("⌃") }
-        if flags.contains(.maskAlternate) { parts.append("⌥") }
-        if flags.contains(.maskShift)     { parts.append("⇧") }
-        if flags.contains(.maskCommand)   { parts.append("⌘") }
+        var parts = CGEventFlags(rawValue: currentFlags).modifierSymbols
         parts.append(GestureBinding.keyCodeString(currentKeyCode))
         return parts
     }
