@@ -109,6 +109,7 @@ private struct ColumnHeaderRow: View {
         HStack(spacing: 12) {
             Color.clear.frame(width: 14, height: 1)
             Color.clear.frame(width: 14, height: 1)
+            Color.clear.frame(width: 34, height: 1)
             Text(L("gestures.column.gesture"))
                 .frame(width: 200, alignment: .leading)
             Text(L("gestures.column.shortcut"))
@@ -148,6 +149,12 @@ private struct BindingRowView: View {
             }
             .frame(width: 14)
 
+            // ジェスチャーアイコンは16px前後のメニュー行では潰れて視認できないため、
+            // Picker内はテキストのみにし、選択中のジェスチャーだけを別枠で大きく表示する。
+            templateIcon(named: binding.gesture.iconName, pointSize: 34)
+                .foregroundStyle(.secondary)
+                .frame(width: 34, height: 34)
+
             Picker("", selection: $binding.gesture) {
                 ForEach(GestureGroup.allCases, id: \.self) { group in
                     Section(group.displayName) {
@@ -155,7 +162,7 @@ private struct BindingRowView: View {
                             GestureType.allCases.filter { $0.group == group },
                             id: \.self
                         ) { gesture in
-                            Label(gesture.displayName, systemImage: gesture.sfSymbol)
+                            Text(gesture.displayName)
                                 .tag(gesture)
                                 .disabled(gesture != binding.gesture && usedGestures.contains(gesture))
                         }
@@ -164,7 +171,7 @@ private struct BindingRowView: View {
             }
             .labelsHidden()
             .pickerStyle(.menu)
-            .frame(width: 200)
+            .frame(width: 178)
 
             KeyRecorderView(keyCode: $binding.keyCode, modifierFlags: $binding.modifierFlags)
                 .frame(maxWidth: .infinity, minHeight: 26, maxHeight: 28)
