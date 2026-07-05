@@ -7,13 +7,9 @@ private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "yubisaki
 
 extension CGEventType {
     static let magnify = CGEventType(rawValue: 29)!
-    /// 4本指タップなどの汎用ジェスチャーイベント
-    static let gesture = CGEventType(rawValue: 30)!
 }
 
-private let kGestureEventMask =
-    CGEventMask(1 << CGEventType.magnify.rawValue) |
-    CGEventMask(1 << CGEventType.gesture.rawValue)
+private let kGestureEventMask = CGEventMask(1 << CGEventType.magnify.rawValue)
 
 /// CGEvent をタップコールバックスレッドからメインスレッドへ運ぶためのラッパー
 private struct UncheckedSendableCGEvent: @unchecked Sendable { let event: CGEvent }
@@ -28,6 +24,8 @@ final class GestureMonitor: @unchecked Sendable {
     private var tapRunLoop: CFRunLoop?
     /// チップタップ検出の状態機械（メインスレッドからのみ触る）
     private let tipTapRecognizer = TipTapRecognizer()
+    /// 3本指/4本指タップ検出の状態機械（メインスレッドからのみ触る）
+    private let multiFingerTapRecognizer = MultiFingerTapRecognizer()
     /// ピンチ検出の状態機械（イベントタップのコールバックスレッドからのみ触る）
     private var pinchRecognizer = PinchRecognizer()
 
@@ -88,10 +86,6 @@ final class GestureMonitor: @unchecked Sendable {
             return Unmanaged.passUnretained(event)
         }
 
-        if type == .gesture {
-            return GestureMonitor.handleGestureEvent(event: event, monitor: monitor)
-        }
-
         // cghidEventTap は magnify 以外の内部イベント（type 0xFFFFFFFF 等）も届くことがある。
         // NSEvent(cgEvent:) に未知の type を渡すと NSInternalInconsistencyException が発生するため、
         // CGEvent レベルで先にフィルタする。
@@ -109,10 +103,11 @@ final class GestureMonitor: @unchecked Sendable {
 
         if phase.contains(.began) {
             monitor.pinchRecognizer.begin(handling: monitor.shouldHandleGesture?() ?? false)
-            // ピンチ開始でチップタップの候補をキャンセル（誤発火保険）
+            // ピンチ開始でタップ系の候補をキャンセル（誤発火保険）
             DispatchQueue.main.async {
                 MainActor.assumeIsolated {
                     monitor.tipTapRecognizer.interrupt()
+                    monitor.multiFingerTapRecognizer.interrupt()
                 }
             }
         }
@@ -134,12 +129,12 @@ final class GestureMonitor: @unchecked Sendable {
         return nil  // consume event
     }
 
-    // MARK: - チップタップ（CGEvent type 29 のタッチ情報）
+    // MARK: - タップ系（CGEvent type 29 のタッチ情報）
 
     // CGEventTap コールバックスレッドから呼ばれる。
     // NSEvent 変換はメインスレッド専用のため、CGEvent を包んで async で運ぶ
     // （メインキューは直列なのでイベント順序は保たれる。
-    //   チップタップはパススルー型で同期的な消費判定が不要なので async でよい。
+    //   タップ系はパススルー型で同期的な消費判定が不要なので async でよい。
     //   sync はタップのタイムアウト無効化を招くため使わない）。
     private func forwardTouchEvent(_ event: CGEvent) {
         let boxed = UncheckedSendableCGEvent(event: event.copy() ?? event)
@@ -161,22 +156,16 @@ final class GestureMonitor: @unchecked Sendable {
         let snapshots = nsEvent.allTouches().compactMap { TouchSnapshot(touch: $0) }
         // タッチ情報を持たない .gesture イベントも混ざるため、空は無視する
         guard !snapshots.isEmpty else { return }
+        // チップタップと3本/4本指タップは前提が排他（前者は置き指の先行接地、後者は同時着地）
+        // なので、同じタッチストリームを両方の認識器に流してよい
         if let gesture = tipTapRecognizer.recognize(touches: snapshots, timestamp: nsEvent.timestamp) {
             logger.debug("Tip tap recognized: \(String(describing: gesture), privacy: .public)")
             onGestureDetected?(gesture)
         }
-    }
-
-    // MARK: - 4本指タップ（CGEvent type 30）
-
-    // type 30 は NSEvent が認識しない非公開 CGEventType。
-    // 4本指タップごとに 1 回届くことを実機で確認済み。
-    private static func handleGestureEvent(event: CGEvent, monitor: GestureMonitor) -> Unmanaged<CGEvent> {
-        DispatchQueue.main.async {
-            logger.debug("fourTap detected")
-            monitor.onGestureDetected?(.fourTap)
+        if let gesture = multiFingerTapRecognizer.recognize(touches: snapshots, timestamp: nsEvent.timestamp) {
+            logger.debug("Multi-finger tap recognized: \(String(describing: gesture), privacy: .public)")
+            onGestureDetected?(gesture)
         }
-        return Unmanaged.passRetained(event)  // システムのデフォルト動作を温存
     }
 
     deinit {
