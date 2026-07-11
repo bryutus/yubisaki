@@ -224,22 +224,39 @@ struct TipTapRecognizerTests {
         #expect(result == .twoTipTapRight)
     }
 
-    @Test func cooldown内の再タップは発火しない() {
+    @Test func cooldown内に完了した再タップは発火しない() {
         let recognizer = TipTapRecognizer()
         let result = performValidTipTap(recognizer, restX: 0.3, tapX: 0.6, startingAt: 0)
         #expect(result == .twoTipTapRight)
         let emittedAt = R.minRestDuration + 0.15
 
-        // cooldown 未経過での再タップ
-        let t1 = emittedAt + R.cooldown - 0.1
+        // 発火直後に着地し cooldown 内に離脱するタップ（指のバウンド相当）は抑止される
         var second = recognizer.recognize(
             touches: [touch("rest", .stationary, x: 0.3), touch("tap2", .began, x: 0.6)],
-            timestamp: t1)
+            timestamp: emittedAt + 0.01)
         #expect(second == nil)
         second = recognizer.recognize(
             touches: [touch("rest", .stationary, x: 0.3), touch("tap2", .ended, x: 0.6)],
-            timestamp: t1 + 0.1)
+            timestamp: emittedAt + R.cooldown - 0.02)
         #expect(second == nil)
+    }
+
+    @Test func cooldown内に着地しても離脱がcooldown後なら発火する() {
+        // cooldown は発火（タップ指の離脱）時に判定する。高速連打では前のタップの
+        // 発火直後に次のタップが着地するため、着地時に弾くと連打を取りこぼす
+        let recognizer = TipTapRecognizer()
+        let result = performValidTipTap(recognizer, restX: 0.3, tapX: 0.6, startingAt: 0)
+        #expect(result == .twoTipTapRight)
+        let emittedAt = R.minRestDuration + 0.15
+
+        var second = recognizer.recognize(
+            touches: [touch("rest", .stationary, x: 0.3), touch("tap2", .began, x: 0.6)],
+            timestamp: emittedAt + 0.02)
+        #expect(second == nil)
+        second = recognizer.recognize(
+            touches: [touch("rest", .stationary, x: 0.3), touch("tap2", .ended, x: 0.6)],
+            timestamp: emittedAt + R.cooldown + 0.05)
+        #expect(second == .twoTipTapRight)
     }
 
     @Test func 一本指タップだけでは発火しない() {
@@ -292,6 +309,95 @@ struct TipTapRecognizerTests {
             touches: [touch("rest", .stationary, x: 0.3), touch("tap", .began, x: 0.6)],
             timestamp: tapStart)
         result = recognizer.recognize(touches: [], timestamp: tapStart + 0.02)
+        #expect(result == nil)
+        result = recognizer.recognize(
+            touches: [touch("rest", .stationary, x: 0.3), touch("tap", .ended, x: 0.6)],
+            timestamp: tapStart + 0.1)
+        #expect(result == .twoTipTapRight)
+    }
+
+    // MARK: - 連続チップタップ（回帰）
+
+    @Test func cooldown内で抑止された打鍵の後も置き指を離さず次の打鍵が発火する() {
+        // 修正前は cooldown 中のタップで invalid に落ち、全指を離すまで復帰できなかった。
+        // 修正後は抑止されても resting を維持し、次の打鍵が発火する。
+        let recognizer = TipTapRecognizer()
+        let result = performValidTipTap(recognizer, restX: 0.3, tapX: 0.6, startingAt: 0)
+        #expect(result == .twoTipTapRight)
+        let emittedAt = R.minRestDuration + 0.15
+
+        // 2打目: cooldown 内に完了するので抑止される（置き指は接地したまま）
+        var r = recognizer.recognize(
+            touches: [touch("rest", .stationary, x: 0.3), touch("tap2", .began, x: 0.6)],
+            timestamp: emittedAt + 0.01)
+        #expect(r == nil)
+        r = recognizer.recognize(
+            touches: [touch("rest", .stationary, x: 0.3), touch("tap2", .ended, x: 0.6)],
+            timestamp: emittedAt + R.cooldown - 0.02)
+        #expect(r == nil)
+
+        // 3打目: 置き指を離していないが発火する（修正の核心）
+        let t3 = emittedAt + R.cooldown + 0.20
+        r = recognizer.recognize(
+            touches: [touch("rest", .stationary, x: 0.3), touch("tap3", .began, x: 0.6)],
+            timestamp: t3)
+        #expect(r == nil)
+        r = recognizer.recognize(
+            touches: [touch("rest", .stationary, x: 0.3), touch("tap3", .ended, x: 0.6)],
+            timestamp: t3 + 0.1)
+        #expect(r == .twoTipTapRight)
+    }
+
+    @Test func 置き指を離さず左右交互に連続チップタップできる() {
+        let recognizer = TipTapRecognizer()
+        // 右タップ
+        var result = performValidTipTap(recognizer, restX: 0.5, tapX: 0.8, startingAt: 0)
+        #expect(result == .twoTipTapRight)
+        var emittedAt = R.minRestDuration + 0.15
+
+        // 左タップ（cooldown + α 経過後、置き指は接地したまま）
+        let leftStart = emittedAt + R.cooldown + 0.05
+        result = recognizer.recognize(
+            touches: [touch("rest", .stationary, x: 0.5), touch("l", .began, x: 0.2)],
+            timestamp: leftStart)
+        #expect(result == nil)
+        result = recognizer.recognize(
+            touches: [touch("rest", .stationary, x: 0.5), touch("l", .ended, x: 0.2)],
+            timestamp: leftStart + 0.1)
+        #expect(result == .twoTipTapLeft)
+        emittedAt = leftStart + 0.1
+
+        // 再び右タップ
+        let rightStart = emittedAt + R.cooldown + 0.05
+        result = recognizer.recognize(
+            touches: [touch("rest", .stationary, x: 0.5), touch("r", .began, x: 0.8)],
+            timestamp: rightStart)
+        #expect(result == nil)
+        result = recognizer.recognize(
+            touches: [touch("rest", .stationary, x: 0.5), touch("r", .ended, x: 0.8)],
+            timestamp: rightStart + 0.1)
+        #expect(result == .twoTipTapRight)
+    }
+
+    @Test func 同時着地で無視されても置き指状態が維持され次のタップが発火する() {
+        let recognizer = TipTapRecognizer()
+        _ = recognizer.recognize(touches: [touch("rest", .began, x: 0.3)], timestamp: 0)
+        // minRestDuration 未満で着地したタップは無視される（invalid に落とさない）
+        var result = recognizer.recognize(
+            touches: [touch("rest", .stationary, x: 0.3), touch("early", .began, x: 0.6)],
+            timestamp: R.minRestDuration - 0.05)
+        #expect(result == nil)
+        // その指が離れる（置き指は接地したまま維持される）
+        result = recognizer.recognize(
+            touches: [touch("rest", .stationary, x: 0.3), touch("early", .ended, x: 0.6)],
+            timestamp: R.minRestDuration + 0.02)
+        #expect(result == nil)
+
+        // 置き指状態のまま、次の正しいタップが発火する
+        let tapStart = R.minRestDuration + 0.30
+        result = recognizer.recognize(
+            touches: [touch("rest", .stationary, x: 0.3), touch("tap", .began, x: 0.6)],
+            timestamp: tapStart)
         #expect(result == nil)
         result = recognizer.recognize(
             touches: [touch("rest", .stationary, x: 0.3), touch("tap", .ended, x: 0.6)],
