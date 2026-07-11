@@ -27,3 +27,7 @@ Produces `dist/Yubisaki.app` — drag into `/Applications`.
 It's ad-hoc signed, so Gatekeeper may warn on first launch (right-click → Open, or
 `xattr -cr dist/Yubisaki.app`). Ad-hoc signatures change on every rebuild, so
 Accessibility/Input Monitoring permissions need re-granting each time.
+
+## License
+
+[MIT](LICENSE)
