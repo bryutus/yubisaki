@@ -1,5 +1,7 @@
 # yubisaki
 
+[![Test](https://github.com/bryutus/yubisaki/actions/workflows/test.yml/badge.svg)](https://github.com/bryutus/yubisaki/actions/workflows/test.yml)
+
 App that triggers app-specific keyboard shortcuts from macOS trackpad gestures.
 
 ## Requirements
