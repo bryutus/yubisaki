@@ -145,7 +145,7 @@ struct MultiFingerTapRecognizerTests {
         var result = recognizer.recognize(
             touches: [touch("A", .began, x: 0.3), touch("B", .began, x: 0.4)], timestamp: 0)
         #expect(result == nil)
-        // 3本目が maxLandingSpread を超えて着地（チップタップ的な順次着地）
+        // 3本目が maxLandingSpread を超えて着地（ホールドタップ的な順次着地）
         result = recognizer.recognize(
             touches: [
                 touch("A", .stationary, x: 0.3),

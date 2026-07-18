@@ -15,13 +15,13 @@ struct TouchSnapshot: Sendable, Equatable {
     let y: Double
 }
 
-/// チップタップ（1本指を置いたまま、別の指で左右どちらかを短くタップ）を検出する状態機械。
+/// ホールドタップ（1本指を置いたまま、別の指で左右どちらかを短くタップ）を検出する状態機械。
 ///
 /// 入力はタッチイベント1回ぶんのスナップショット集合。タイマーは使わず、
 /// 失格・発火の判定はすべて次のタッチイベント到着時に評価する
 /// （タップ指の離脱は必ずイベントを生むため、イベント駆動で完結する）。
 @MainActor
-final class TipTapRecognizer {
+final class HoldTapRecognizer {
     // MARK: - 調整可能な閾値
 
     /// タップ着地前に休止指が接地しているべき最短時間（2本指同時タップとの区別）
@@ -35,7 +35,7 @@ final class TipTapRecognizer {
     /// 左右判定に必要な最小X距離（曖昧なタップの誤発火防止）
     static let minHorizontalSeparation: Double = 0.08
     /// 発火後の再発火抑止時間。指のバウンド等による二重発火だけを防げばよいので、
-    /// 意図的な連続チップタップ（人間の連打）を一切妨げない短さにする。
+    /// 意図的な連続ホールドタップ（人間の連打）を一切妨げない短さにする。
     /// 判定はタップの着地時ではなく発火（タップ指の離脱）時に行う
     static let cooldown: TimeInterval = 0.05
 
@@ -58,7 +58,7 @@ final class TipTapRecognizer {
     private enum State {
         /// タッチなし
         case idle
-        /// 1本だけ接地中（チップタップの「置き指」候補）
+        /// 1本だけ接地中（ホールドタップの「置き指」候補）
         case resting(restID: String)
         /// 置き指 + タップ指が接地中。タップ指の離脱を待っている
         case candidate(restID: String, tapID: String)
@@ -74,7 +74,7 @@ final class TipTapRecognizer {
 
     // MARK: - 認識
 
-    /// タッチイベント1回ぶんのスナップショット集合を処理し、チップタップが確定したらジェスチャーを返す。
+    /// タッチイベント1回ぶんのスナップショット集合を処理し、ホールドタップが確定したらジェスチャーを返す。
     /// - Parameters:
     ///   - touches: イベントに含まれる全タッチ。空の場合は無視する（タッチ情報を持たないイベントが混ざるため）
     ///   - timestamp: イベントのタイムスタンプ（単調増加であれば基準は問わない）
@@ -89,7 +89,7 @@ final class TipTapRecognizer {
 
         let activeIDs = Set(tracked.keys).subtracting(endedIDs)
 
-        // 3本以上の接地はチップタップではない
+        // 3本以上の接地はホールドタップではない
         if activeIDs.count > 2 {
             state = .invalid
         }
@@ -121,12 +121,12 @@ final class TipTapRecognizer {
                 }
                 // 置き指と同時着地したタップ（2本指タップ）は候補にせず無視する。
                 // invalid にすると全指離脱まで復帰できず、置き指を残したままの
-                // 連続チップタップが2打目以降できなくなるため、置き指状態を維持する。
+                // 連続ホールドタップが2打目以降できなくなるため、置き指状態を維持する。
             }
 
         case .candidate(let restID, let tapID):
             if endedIDs.contains(tapID) {
-                // タップ指が離れた。置き指が無事ならチップタップ判定へ
+                // タップ指が離れた。置き指が無事ならホールドタップ判定へ
                 let restIntact = tracked[restID] != nil
                     && !endedIDs.contains(restID)
                     && tracked[restID]!.displacement <= Self.restMovementTolerance
@@ -138,9 +138,9 @@ final class TipTapRecognizer {
                         && tapDuration <= Self.maxTapDuration
                         && tap.displacement <= Self.tapMovementTolerance
                         && separation >= Self.minHorizontalSeparation {
-                        emitted = tap.startX < rest.lastX ? .twoTipTapLeft : .twoTipTapRight
+                        emitted = tap.startX < rest.lastX ? .twoHoldTapLeft : .twoHoldTapRight
                         lastEmittedAt = timestamp
-                        // 置き指の基準位置を現在位置で取り直す。連続チップタップ中の
+                        // 置き指の基準位置を現在位置で取り直す。連続ホールドタップ中の
                         // わずかなドリフトが累積して失格（置き指が動いた扱い）になるのを防ぐ
                         tracked[restID] = TrackedTouch(
                             startTime: rest.startTime,
@@ -148,7 +148,7 @@ final class TipTapRecognizer {
                             lastX: rest.lastX, lastY: rest.lastY
                         )
                     }
-                    // 発火の有無によらず、置き指が残っているので連続チップタップに備える
+                    // 発火の有無によらず、置き指が残っているので連続ホールドタップに備える
                     state = .resting(restID: restID)
                 } else {
                     state = activeIDs.isEmpty ? .idle : .invalid

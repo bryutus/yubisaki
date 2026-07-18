@@ -86,7 +86,7 @@ struct GestureBindingTests {
 
     @Test func encodeしてdecodeすると同じ内容に戻る() throws {
         let original = GestureBinding(
-            gesture: .twoTipTapRight, keyCode: 8, modifierFlags: CGEventFlags.maskShift.rawValue, enabled: false)
+            gesture: .twoHoldTapRight, keyCode: 8, modifierFlags: CGEventFlags.maskShift.rawValue, enabled: false)
         let data = try JSONEncoder().encode(original)
         let decoded = try JSONDecoder().decode(GestureBinding.self, from: data)
         #expect(decoded.id == original.id)
@@ -94,5 +94,40 @@ struct GestureBindingTests {
         #expect(decoded.keyCode == original.keyCode)
         #expect(decoded.modifierFlags == original.modifierFlags)
         #expect(decoded.enabled == original.enabled)
+    }
+
+    // MARK: - GestureType の旧名からの移行
+
+    @Test func 旧名twoTipTapをホールドタップとして読める() throws {
+        let json = """
+        [{"gesture":{"twoTipTapLeft":{}},"keyCode":1,"modifierFlags":0},
+         {"gesture":{"twoTipTapRight":{}},"keyCode":2,"modifierFlags":0}]
+        """
+        let decoded = try JSONDecoder().decode([GestureBinding].self, from: Data(json.utf8))
+        #expect(decoded.map(\.gesture) == [.twoHoldTapLeft, .twoHoldTapRight])
+    }
+
+    @Test func 保存時は新名で書き出す() throws {
+        let data = try JSONEncoder().encode(GestureBinding(gesture: .twoHoldTapLeft, keyCode: 1))
+        let json = String(decoding: data, as: UTF8.self)
+        #expect(json.contains("twoHoldTapLeft"))
+        #expect(!json.contains("twoTipTapLeft"))
+    }
+
+    @Test func 全ケースがencode_decodeで往復する() throws {
+        for gesture in GestureType.allCases {
+            let data = try JSONEncoder().encode(GestureBinding(gesture: gesture, keyCode: 1))
+            let decoded = try JSONDecoder().decode(GestureBinding.self, from: data)
+            #expect(decoded.gesture == gesture)
+        }
+    }
+
+    @Test func 未知のジェスチャー名はデコードに失敗する() {
+        let json = """
+        {"gesture":{"fiveFingerSalute":{}},"keyCode":1,"modifierFlags":0}
+        """
+        #expect(throws: (any Error).self) {
+            try JSONDecoder().decode(GestureBinding.self, from: Data(json.utf8))
+        }
     }
 }

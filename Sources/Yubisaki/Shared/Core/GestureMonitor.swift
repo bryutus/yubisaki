@@ -22,8 +22,8 @@ final class GestureMonitor: @unchecked Sendable {
 
     private var eventTap: CFMachPort?
     private var tapRunLoop: CFRunLoop?
-    /// チップタップ検出の状態機械（メインスレッドからのみ触る）
-    private let tipTapRecognizer = TipTapRecognizer()
+    /// ホールドタップ検出の状態機械（メインスレッドからのみ触る）
+    private let holdTapRecognizer = HoldTapRecognizer()
     /// 3本指/4本指タップ検出の状態機械（メインスレッドからのみ触る）
     private let multiFingerTapRecognizer = MultiFingerTapRecognizer()
     /// ピンチ検出の状態機械（イベントタップのコールバックスレッドからのみ触る）
@@ -91,7 +91,7 @@ final class GestureMonitor: @unchecked Sendable {
         // CGEvent レベルで先にフィルタする。
         guard type == .magnify else { return Unmanaged.passRetained(event) }
 
-        // チップタップ検出: type 29 のタッチ情報はメインスレッドで抽出する（パススルー）
+        // ホールドタップ検出: type 29 のタッチ情報はメインスレッドで抽出する（パススルー）
         monitor.forwardTouchEvent(event)
 
         guard let nsEvent = NSEvent(cgEvent: event),
@@ -106,7 +106,7 @@ final class GestureMonitor: @unchecked Sendable {
             // ピンチ開始でタップ系の候補をキャンセル（誤発火保険）
             DispatchQueue.main.async {
                 MainActor.assumeIsolated {
-                    monitor.tipTapRecognizer.interrupt()
+                    monitor.holdTapRecognizer.interrupt()
                     monitor.multiFingerTapRecognizer.interrupt()
                 }
             }
@@ -156,9 +156,9 @@ final class GestureMonitor: @unchecked Sendable {
         let snapshots = nsEvent.allTouches().compactMap { TouchSnapshot(touch: $0) }
         // タッチ情報を持たない .gesture イベントも混ざるため、空は無視する
         guard !snapshots.isEmpty else { return }
-        // チップタップと3本/4本指タップは前提が排他（前者は置き指の先行接地、後者は同時着地）
+        // ホールドタップと3本/4本指タップは前提が排他（前者は置き指の先行接地、後者は同時着地）
         // なので、同じタッチストリームを両方の認識器に流してよい
-        if let gesture = tipTapRecognizer.recognize(touches: snapshots, timestamp: nsEvent.timestamp) {
+        if let gesture = holdTapRecognizer.recognize(touches: snapshots, timestamp: nsEvent.timestamp) {
             logger.debug("Tip tap recognized: \(String(describing: gesture), privacy: .public)")
             onGestureDetected?(gesture)
         }

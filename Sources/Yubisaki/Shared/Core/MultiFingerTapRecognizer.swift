@@ -2,7 +2,7 @@ import Foundation
 
 /// 複数本指の同時タップ（3本指 / 4本指）を検出する状態機械。
 ///
-/// 入力は `TipTapRecognizer` と同じタッチイベント1回ぶんのスナップショット集合。
+/// 入力は `HoldTapRecognizer` と同じタッチイベント1回ぶんのスナップショット集合。
 /// 「全指がほぼ同時に着地し、ほとんど動かず、短時間で全指が離れる」場合のみ
 /// タップと判定する。移動量と接地時間で絞ることで、Mission Control 等の
 /// スワイプ開始をタップと誤判定しない。
@@ -82,7 +82,7 @@ final class MultiFingerTapRecognizer {
                 // 5本以上はタップではない
                 state = .invalid
             } else if !newIDs.isEmpty && elapsed > Self.maxLandingSpread {
-                // 後着の指が遅すぎる（チップタップや順次着地）
+                // 後着の指が遅すぎる（ホールドタップや順次着地）
                 state = .invalid
             } else if tracked.values.contains(where: { $0.displacement > Self.movementTolerance }) {
                 // いずれかの指が動いた（スワイプ・スクロール・ピンチ）
@@ -98,7 +98,7 @@ final class MultiFingerTapRecognizer {
                 switch tracked.count {
                 case 3: emitted = .threeTap
                 case 4: emitted = .fourTap
-                default: break  // 1〜2本は対象外（チップタップ等は別の認識器が担う）
+                default: break  // 1〜2本は対象外（ホールドタップ等は別の認識器が担う）
                 }
             }
 

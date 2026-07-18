@@ -6,8 +6,8 @@
 /* Gesture Types */
 "gesture.pinchIn"           = "Pinch In";
 "gesture.pinchOut"          = "Pinch Out";
-"gesture.twoTipTapLeft"     = "Tip Tap Left";
-"gesture.twoTipTapRight"    = "Tip Tap Right";
+"gesture.twoHoldTapLeft"    = "Hold Tap Left";
+"gesture.twoHoldTapRight"   = "Hold Tap Right";
 "gesture.threeTap"          = "Tap";
 "gesture.fourTap"           = "Tap";
 
