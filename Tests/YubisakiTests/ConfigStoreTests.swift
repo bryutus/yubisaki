@@ -148,9 +148,9 @@ struct ConfigStoreTests {
                 // keyCode 0
                 AppProfile(bundleID: "com.zero.keycode",
                            bindings: [GestureBinding(gesture: .pinchIn, keyCode: 0)]),
-                // pinch 以外（チップタップ）
+                // pinch 以外（ホールドタップ）
                 AppProfile(bundleID: "com.tip.tap",
-                           bindings: [GestureBinding(gesture: .twoTipTapLeft, keyCode: 1)]),
+                           bindings: [GestureBinding(gesture: .twoHoldTapLeft, keyCode: 1)]),
             ]
             store.saveProfiles()
 
@@ -163,7 +163,7 @@ struct ConfigStoreTests {
             // pinch バインディングなし
             store.globalProfile = AppProfile(
                 bundleID: AppProfile.globalBundleID,
-                bindings: [GestureBinding(gesture: .twoTipTapLeft, keyCode: 1)])
+                bindings: [GestureBinding(gesture: .twoHoldTapLeft, keyCode: 1)])
             store.saveGlobalProfile()
             #expect(store.gestureSnapshot().globalHasPinchBinding == false)
 

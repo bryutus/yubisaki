@@ -1,7 +1,7 @@
 /// ピンチ（magnify）イベント列からピンチイン/アウトを判定する累積状態機械。
 ///
 /// AppKit 非依存の値型にすることで、合成イベント列によるユニットテストを可能にする
-/// （`TipTapRecognizer` と同じ方針）。`GestureMonitor` の CGEventTap コールバック
+/// （`HoldTapRecognizer` と同じ方針）。`GestureMonitor` の CGEventTap コールバック
 /// スレッドからのみ使う前提で、スレッド閉じ込めは呼び出し側の責務。
 struct PinchRecognizer {
     /// ピンチ確定に必要な累積変化量の閾値

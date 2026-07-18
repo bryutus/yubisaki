@@ -15,7 +15,7 @@ enum GestureGroup: CaseIterable, Sendable {
 enum GestureType: Codable, Sendable, Hashable, CaseIterable {
     // 2-finger
     case pinchIn, pinchOut
-    case twoTipTapLeft, twoTipTapRight
+    case twoHoldTapLeft, twoHoldTapRight
 
     // 3-finger
     case threeTap
@@ -25,7 +25,7 @@ enum GestureType: Codable, Sendable, Hashable, CaseIterable {
 
     var group: GestureGroup {
         switch self {
-        case .pinchIn, .pinchOut, .twoTipTapLeft, .twoTipTapRight:
+        case .pinchIn, .pinchOut, .twoHoldTapLeft, .twoHoldTapRight:
             return .twoFinger
         case .threeTap:
             return .threeFinger
@@ -39,23 +39,23 @@ enum GestureType: Codable, Sendable, Hashable, CaseIterable {
     /// `Sources/Yubisaki/Resources/Icons/` 内の独自アイコン画像名（`scripts/make-gesture-icons.swift` で生成）
     var iconName: String {
         switch self {
-        case .pinchIn:         return "pinchIn"
-        case .pinchOut:        return "pinchOut"
-        case .twoTipTapLeft:   return "twoTipTapLeft"
-        case .twoTipTapRight:  return "twoTipTapRight"
-        case .threeTap:        return "threeTap"
-        case .fourTap:         return "fourTap"
+        case .pinchIn:          return "pinchIn"
+        case .pinchOut:         return "pinchOut"
+        case .twoHoldTapLeft:   return "twoHoldTapLeft"
+        case .twoHoldTapRight:  return "twoHoldTapRight"
+        case .threeTap:         return "threeTap"
+        case .fourTap:          return "fourTap"
         }
     }
 
     private var localizationKey: String {
         switch self {
-        case .pinchIn:         return "gesture.pinchIn"
-        case .pinchOut:        return "gesture.pinchOut"
-        case .twoTipTapLeft:   return "gesture.twoTipTapLeft"
-        case .twoTipTapRight:  return "gesture.twoTipTapRight"
-        case .threeTap:        return "gesture.threeTap"
-        case .fourTap:         return "gesture.fourTap"
+        case .pinchIn:          return "gesture.pinchIn"
+        case .pinchOut:         return "gesture.pinchOut"
+        case .twoHoldTapLeft:   return "gesture.twoHoldTapLeft"
+        case .twoHoldTapRight:  return "gesture.twoHoldTapRight"
+        case .threeTap:         return "gesture.threeTap"
+        case .fourTap:          return "gesture.fourTap"
         }
     }
 }

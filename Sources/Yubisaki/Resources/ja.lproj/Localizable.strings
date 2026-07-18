@@ -6,8 +6,8 @@
 /* Gesture Types */
 "gesture.pinchIn"            = "ピンチイン";
 "gesture.pinchOut"           = "ピンチアウト";
-"gesture.twoTipTapLeft"      = "チップタップ (左)";
-"gesture.twoTipTapRight"     = "チップタップ (右)";
+"gesture.twoHoldTapLeft"     = "ホールドタップ (左)";
+"gesture.twoHoldTapRight"    = "ホールドタップ (右)";
 "gesture.threeTap"           = "タップ";
 "gesture.fourTap"            = "タップ";
 
