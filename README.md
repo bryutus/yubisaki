@@ -15,6 +15,14 @@
 - macOS 15+
 - Sandbox disabled (needed for Input Monitoring)
 
+## Pinch gestures and native zoom
+
+Binding either pinch gesture for an app (or globally) makes yubisaki consume that
+app's pinch events in **both** directions, so macOS's native pinch-to-zoom stops
+working there — including the direction you did not bind, which then does nothing
+at all. Whether to consume has to be decided when the gesture begins, while the
+direction is only known once it ends, so this cannot be decided per direction.
+
 ## Development
 
 ```bash
