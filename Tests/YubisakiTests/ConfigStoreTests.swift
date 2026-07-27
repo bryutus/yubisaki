@@ -83,17 +83,31 @@ struct ConfigStoreTests {
         }
     }
 
-    @Test func keyCode0のバインディングは一致対象にならずグローバルにフォールバックする() {
+    @Test func ショートカット未設定のバインディングは一致対象にならずグローバルにフォールバックする() {
         withStore { store, _ in
             let globalBinding = GestureBinding(gesture: .pinchIn, keyCode: 5)
             store.globalProfile = AppProfile(
                 bundleID: AppProfile.globalBundleID, bindings: [globalBinding])
             store.profiles = [AppProfile(
                 bundleID: "com.example.app",
-                bindings: [GestureBinding(gesture: .pinchIn, keyCode: 0)])]
+                bindings: [GestureBinding(gesture: .pinchIn, keyCode: nil)])]
 
             let resolved = store.binding(for: "com.example.app", gesture: .pinchIn)
             #expect(resolved?.id == globalBinding.id)
+        }
+    }
+
+    @Test func keyCode0のバインディングはAキーとして一致する() {
+        withStore { store, _ in
+            store.globalProfile = AppProfile(
+                bundleID: AppProfile.globalBundleID,
+                bindings: [GestureBinding(gesture: .pinchIn, keyCode: 5)])
+            let appBinding = GestureBinding(gesture: .pinchIn, keyCode: 0)
+            store.profiles = [AppProfile(bundleID: "com.example.app", bindings: [appBinding])]
+
+            let resolved = store.binding(for: "com.example.app", gesture: .pinchIn)
+            #expect(resolved?.id == appBinding.id)
+            #expect(resolved?.keyCode == 0)
         }
     }
 
@@ -145,9 +159,9 @@ struct ConfigStoreTests {
                 // 無効バインディング
                 AppProfile(bundleID: "com.disabled.binding",
                            bindings: [GestureBinding(gesture: .pinchIn, keyCode: 1, enabled: false)]),
-                // keyCode 0
-                AppProfile(bundleID: "com.zero.keycode",
-                           bindings: [GestureBinding(gesture: .pinchIn, keyCode: 0)]),
+                // ショートカット未設定
+                AppProfile(bundleID: "com.unset.shortcut",
+                           bindings: [GestureBinding(gesture: .pinchIn, keyCode: nil)]),
                 // pinch 以外（ホールドタップ）
                 AppProfile(bundleID: "com.tip.tap",
                            bindings: [GestureBinding(gesture: .twoHoldTapLeft, keyCode: 1)]),

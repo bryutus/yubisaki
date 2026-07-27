@@ -3,7 +3,8 @@ import CoreGraphics
 import AppKit
 
 struct KeyRecorderView: NSViewRepresentable {
-    @Binding var keyCode: CGKeyCode
+    /// 未設定は nil（0 は 'A' の正当なキーコード）
+    @Binding var keyCode: CGKeyCode?
     @Binding var modifierFlags: UInt64
 
     func makeNSView(context: Context) -> KeyRecorderNSView {
@@ -22,9 +23,9 @@ struct KeyRecorderView: NSViewRepresentable {
 }
 
 final class KeyRecorderNSView: NSView {
-    var currentKeyCode: CGKeyCode = 0
+    var currentKeyCode: CGKeyCode?
     var currentFlags: UInt64 = 0
-    var onCapture: ((CGKeyCode, CGEventFlags) -> Void)?
+    var onCapture: ((CGKeyCode?, CGEventFlags) -> Void)?
 
     private var isRecording = false { didSet { needsDisplay = true } }
     private var pendingModifiers: NSEvent.ModifierFlags = [] { didSet { needsDisplay = true } }
@@ -42,8 +43,8 @@ final class KeyRecorderNSView: NSView {
 
     override func mouseDown(with event: NSEvent) {
         let point = convert(event.locationInWindow, from: nil)
-        if !isRecording && currentKeyCode != 0 && clearButtonRect.contains(point) {
-            onCapture?(0, CGEventFlags(rawValue: 0))
+        if !isRecording && currentKeyCode != nil && clearButtonRect.contains(point) {
+            onCapture?(nil, CGEventFlags(rawValue: 0))
             return
         }
         if isRecording {
@@ -181,7 +182,7 @@ final class KeyRecorderNSView: NSView {
             ])
             label.draw(at: NSPoint(x: 18, y: midY - label.size().height / 2))
 
-        } else if currentKeyCode != 0 {
+        } else if currentKeyCode != nil {
             // State 4: shortcut pills + × clear button
             var x: CGFloat = 8
             for part in shortcutParts() {
@@ -251,6 +252,7 @@ final class KeyRecorderNSView: NSView {
     }
 
     private func shortcutParts() -> [String] {
+        guard let currentKeyCode else { return [] }
         var parts = CGEventFlags(rawValue: currentFlags).modifierSymbols
         parts.append(GestureBinding.keyCodeString(currentKeyCode))
         return parts

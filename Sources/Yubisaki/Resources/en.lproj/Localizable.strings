@@ -12,21 +12,14 @@
 "gesture.fourTap"           = "Tap";
 
 /* Menu Bar */
-"menu.status.running" = "Running";
-"menu.status.paused"  = "Paused";
-"menu.pause"          = "Pause";
-"menu.resume"         = "Resume";
 "menu.settings"       = "Settings…";
 "menu.quit"           = "Quit yubisaki";
 
 /* Settings Window */
-"settings.title"        = "Settings";
 "settings.tab.gestures" = "Gestures";
 "settings.tab.general"  = "General";
 
 /* App Sidebar */
-"sidebar.section.system"       = "System";
-"sidebar.section.applications" = "Applications";
 "sidebar.allApps"              = "All Applications";
 "sidebar.addApp"               = "Add app";
 "sidebar.removeApp"            = "Remove app";
@@ -37,7 +30,6 @@
 "gestures.gesturesEnabled"  = "Gestures enabled";
 "gestures.column.gesture"   = "Gesture";
 "gestures.column.shortcut"  = "Shortcut";
-"gestures.activeCount"      = "%d active bindings";
 "gestures.selectApp"        = "Select an app from the list on the left";
 "gestures.noBindings"       = "No gesture bindings";
 "gestures.addBinding"       = "Add binding";
@@ -47,7 +39,6 @@
 /* Shortcut Field */
 "shortcut.clickToRecord" = "Click to record";
 "shortcut.pressNewKey"   = "Press new keys";
-"shortcut.recording"     = "Recording…";
 
 /* General Tab */
 "general.launchAtLogin"         = "Launch yubisaki at login";
@@ -65,6 +56,12 @@
 "general.openSystemSettings"    = "Open System Settings…";
 "general.footer.reset"          = "Reset…";
 "general.reset.title"           = "Reset Settings";
-"general.reset.message"         = "Resets gestures enabled, launch at login, and show in Dock to their defaults.";
+"general.reset.message"         = "Resets gestures enabled, show shortcut on screen, launch at login, and show in Dock to their defaults.";
 "general.reset.confirm"         = "Reset";
 "general.reset.cancel"          = "Cancel";
+
+/* Permission Alert */
+"permission.inputMonitoring.title"   = "Input Monitoring permission required";
+"permission.inputMonitoring.message" = "Allow yubisaki in System Settings > Privacy & Security > Input Monitoring.";
+"permission.openSystemSettings"      = "Open System Settings";
+"permission.later"                   = "Later";

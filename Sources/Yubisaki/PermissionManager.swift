@@ -45,10 +45,10 @@ enum PermissionManager {
     private static func presentSettingsAlert() {
         NSApp.activate()
         let alert = NSAlert()
-        alert.messageText = "入力監視の権限が必要です"
-        alert.informativeText = "システム設定 > プライバシーとセキュリティ > 入力監視 で yubisaki を許可してください。"
-        alert.addButton(withTitle: "システム設定を開く")
-        alert.addButton(withTitle: "後で")
+        alert.messageText = L("permission.inputMonitoring.title")
+        alert.informativeText = L("permission.inputMonitoring.message")
+        alert.addButton(withTitle: L("permission.openSystemSettings"))
+        alert.addButton(withTitle: L("permission.later"))
         if alert.runModal() == .alertFirstButtonReturn {
             NSWorkspace.shared.open(
                 URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent")!

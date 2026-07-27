@@ -7,8 +7,13 @@ private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "yubisaki
 /// `ConfigStore` の `@Observable` 状態には触れず、これだけをロック越しに参照する。
 struct GestureSnapshot: Sendable {
     var gesturesEnabled = true
-    // 現在検出可能なジェスチャー(pinchIn/Out)に使用可能なバインディングを持つ、有効なプロファイルの bundleID。
+    // pinchIn / pinchOut のどちらかに使用可能なバインディングを持つ、有効なプロファイルの bundleID。
     // ここに無いアプリでは pinch を消費せず、ネイティブのピンチズームを温存する。
+    //
+    // 判定はアプリ単位で、方向は区別しない。ピンチを消費するかは began の時点で決める必要が
+    // ある一方、ピンチイン/アウトの向きは累積量が確定する ended までわからないため。
+    // 片方向だけ割り当てたアプリでは、もう片方向のピンチも消費されて
+    // ネイティブのピンチズームが効かなくなる（ショートカットも発火しない）。
     var pinchBoundBundleIDs: Set<String> = []
     var globalHasPinchBinding = false
 }
@@ -107,6 +112,7 @@ final class ConfigStore: @unchecked Sendable {
     // 変更箇所だけ書き込めるよう、粒度別の保存も公開する。いずれもスナップショットを更新する。
     func savePreferences() {
         refreshGestureSnapshot()
+        ensureBaseDirectory()
         do {
             let data = try JSONEncoder().encode(preferences)
             try data.write(to: preferencesURL, options: .atomic)
@@ -138,8 +144,7 @@ final class ConfigStore: @unchecked Sendable {
     }
 
     func binding(for bundleID: String, gesture: GestureType) -> GestureBinding? {
-        // keyCode == 0 は「ショートカット未設定」。発火させると virtualKey 0 = 'A' を送って
-        // しまうため、未設定のバインディングは一致対象から除外する。
+        // ショートカット未設定（keyCode == nil）のバインディングは送るキーが無いので一致対象から除外する。
         if let b = profiles.first(where: { $0.bundleID == bundleID && $0.enabled })?
             .bindings.first(where: { $0.gesture == gesture && $0.isUsable }) {
             return b

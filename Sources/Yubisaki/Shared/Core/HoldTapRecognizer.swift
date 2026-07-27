@@ -7,7 +7,7 @@ struct TouchSnapshot: Sendable, Equatable {
         case began, moved, stationary, ended, cancelled
     }
 
-    /// NSTouch.identity を文字列化した安定キー（タッチの接地〜離脱の間は不変）
+    /// `GestureMonitor` が接地〜離脱の間ずっと同じ値になるように割り当てるキー
     let id: String
     let phase: Phase
     /// トラックパッド正規化座標（原点は左下、0.0〜1.0）

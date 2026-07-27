@@ -23,17 +23,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         monitor.shouldHandleGesture = { [weak watcher] in
             // CGEventTap スレッドから呼ばれる。メインへ同期せず、ロック保護のスナップショットを読む。
             // 使用可能な pinch バインディング(アプリ個別 or グローバル)がある時だけ消費し、
-            // 未割当時はネイティブのピンチズームを温存する。
+            // 未割当のアプリではネイティブのピンチズームを温存する。
+            // 消費の可否は began の時点で決めるため、方向別の判断はできない（ConfigStore 参照）。
             let snapshot = ConfigStore.shared.gestureSnapshot()
             guard snapshot.gesturesEnabled else { return false }
             guard let bundleID = watcher?.frontmostBundleID else { return false }
             return snapshot.pinchBoundBundleIDs.contains(bundleID) || snapshot.globalHasPinchBinding
         }
         monitor.onGestureDetected = { [weak watcher] gesture in
+            // ピンチは消費判定（shouldHandleGesture）でも見ているが、タップ系は消費判定を
+            // 通らないため、全ジェスチャー共通の関門はここだけになる。
+            guard ConfigStore.shared.gestureSnapshot().gesturesEnabled else { return }
             guard let bundleID = watcher?.frontmostBundleID else { return }
-            guard let binding = ConfigStore.shared.binding(for: bundleID, gesture: gesture) else { return }
-            logger.info("Sending \(String(describing: gesture), privacy: .public) → keyCode \(binding.keyCode) to \(bundleID, privacy: .public)")
-            KeySender.send(keyCode: binding.keyCode, flags: binding.eventFlags)
+            guard let binding = ConfigStore.shared.binding(for: bundleID, gesture: gesture),
+                  let keyCode = binding.keyCode else { return }
+            logger.info("Sending \(String(describing: gesture), privacy: .public) → keyCode \(keyCode) to \(bundleID, privacy: .public)")
+            KeySender.send(keyCode: keyCode, flags: binding.eventFlags)
             if ConfigStore.shared.preferences.hudEnabled {
                 HUDManager.shared.present(gesture: gesture, shortcutDescription: binding.shortcutDescription)
             }

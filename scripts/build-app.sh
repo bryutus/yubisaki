@@ -36,7 +36,7 @@ mkdir -p "$APP_PATH/Contents/MacOS" "$APP_PATH/Contents/Resources"
 cp "$EXECUTABLE" "$APP_PATH/Contents/MacOS/$APP_NAME"
 
 # Contents/Resources 配下（署名可能な標準の場所）に配置する。
-# Localization.swift 側でこの場所を優先的に探すようにしている。
+# Shared/ResourceBundle.swift 側でこの場所を優先的に探すようにしている。
 if [ -d "$RESOURCE_BUNDLE" ]; then
     cp -R "$RESOURCE_BUNDLE" "$APP_PATH/Contents/Resources/"
 fi
@@ -45,7 +45,12 @@ sed "s/__VERSION__/$VERSION/g" Packaging/Info.plist.template > "$APP_PATH/Conten
 cp Packaging/AppIcon.icns "$APP_PATH/Contents/Resources/AppIcon.icns"
 
 echo "==> Ad-hoc signing"
-codesign --force --deep --sign - "$APP_PATH"
-codesign --verify --verbose "$APP_PATH"
+# --deep は署名用途では非推奨（macOS 13以降）。入れ子のリソースバンドルから順に署名する。
+if [ -d "$APP_PATH/Contents/Resources/yubisaki_Yubisaki.bundle" ]; then
+    codesign --force --sign - "$APP_PATH/Contents/Resources/yubisaki_Yubisaki.bundle"
+fi
+codesign --force --sign - "$APP_PATH"
+# 検証は入れ子まで見る（--deep は検証では非推奨ではない）
+codesign --verify --deep --strict --verbose "$APP_PATH"
 
 echo "==> Done: $APP_PATH"

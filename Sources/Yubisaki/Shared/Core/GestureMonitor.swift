@@ -20,14 +20,24 @@ final class GestureMonitor: @unchecked Sendable {
     /// Return true to consume the gesture (suppress native zoom); false to pass through.
     var shouldHandleGesture: (() -> Bool)?
 
-    private var eventTap: CFMachPort?
-    private var tapRunLoop: CFRunLoop?
+    /// イベントタップの実体。生成はメイン、RunLoop の登録はタップ用スレッド、
+    /// 再有効化はコールバックスレッドと触るスレッドが分かれるためロックで保護する。
+    /// CFMachPort / CFRunLoop への参照自体はスレッドをまたいで渡してよい
+    /// （ここで呼ぶ `CGEvent.tapEnable` と `CFRunLoopStop` はどちらもスレッドセーフ）。
+    private struct TapState: @unchecked Sendable {
+        var eventTap: CFMachPort?
+        var runLoop: CFRunLoop?
+    }
+
+    private let tapState = OSAllocatedUnfairLock(initialState: TapState())
     /// ホールドタップ検出の状態機械（メインスレッドからのみ触る）
     private let holdTapRecognizer = HoldTapRecognizer()
     /// 3本指/4本指タップ検出の状態機械（メインスレッドからのみ触る）
     private let multiFingerTapRecognizer = MultiFingerTapRecognizer()
     /// ピンチ検出の状態機械（イベントタップのコールバックスレッドからのみ触る）
     private var pinchRecognizer = PinchRecognizer()
+    /// タッチIDの割り当て（メインスレッドからのみ触る）
+    private let touchIDs = TouchIDTable()
 
     func startMonitoring() {
         guard let tap = CGEvent.tapCreate(
@@ -42,14 +52,14 @@ final class GestureMonitor: @unchecked Sendable {
             return
         }
 
-        eventTap = tap
+        tapState.withLock { $0.eventTap = tap }
 
         let thread = Thread {
             let source = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, tap, 0)
             let rl = CFRunLoopGetCurrent()
             CFRunLoopAddSource(rl, source, .commonModes)
             CGEvent.tapEnable(tap: tap, enable: true)
-            self.tapRunLoop = rl
+            self.tapState.withLock { $0.runLoop = rl }
             CFRunLoopRun()
         }
         thread.name = "GestureMonitor"
@@ -58,14 +68,17 @@ final class GestureMonitor: @unchecked Sendable {
     }
 
     func stopMonitoring() {
-        if let tap = eventTap {
+        let previous = tapState.withLock { state -> TapState in
+            let previous = state
+            state = TapState()
+            return previous
+        }
+        if let tap = previous.eventTap {
             CGEvent.tapEnable(tap: tap, enable: false)
         }
-        if let rl = tapRunLoop {
+        if let rl = previous.runLoop {
             CFRunLoopStop(rl)
         }
-        eventTap = nil
-        tapRunLoop = nil
     }
 
     private static let eventTapCallback: CGEventTapCallBack = { _, type, event, userInfo in
@@ -80,7 +93,7 @@ final class GestureMonitor: @unchecked Sendable {
             } else {
                 logger.warning("Event tap disabled by user input, re-enabling")
             }
-            if let tap = monitor.eventTap {
+            if let tap = monitor.tapState.withLock({ $0.eventTap }) {
                 CGEvent.tapEnable(tap: tap, enable: true)
             }
             return Unmanaged.passUnretained(event)
@@ -153,19 +166,36 @@ final class GestureMonitor: @unchecked Sendable {
               nsEvent.type == .gesture else {
             return
         }
-        let snapshots = nsEvent.allTouches().compactMap { TouchSnapshot(touch: $0) }
-        // タッチ情報を持たない .gesture イベントも混ざるため、空は無視する
+        let touches = nsEvent.allTouches()
+        // タッチ情報を持たない .gesture イベントも混ざるため、空は無視する（全指離脱ではない）
+        guard !touches.isEmpty else { return }
+
+        let snapshots = touches.compactMap { snapshot(for: $0) }
+        touchIDs.retire(after: touches)
         guard !snapshots.isEmpty else { return }
-        // ホールドタップと3本/4本指タップは前提が排他（前者は置き指の先行接地、後者は同時着地）
-        // なので、同じタッチストリームを両方の認識器に流してよい
+
+        // 3本以上の接地はホールドタップ側が無条件で失格にするため、同じタッチストリームを
+        // 両方の認識器に流しても二重発火しない
         if let gesture = holdTapRecognizer.recognize(touches: snapshots, timestamp: nsEvent.timestamp) {
-            logger.debug("Tip tap recognized: \(String(describing: gesture), privacy: .public)")
+            logger.debug("Hold tap recognized: \(String(describing: gesture), privacy: .public)")
             onGestureDetected?(gesture)
         }
         if let gesture = multiFingerTapRecognizer.recognize(touches: snapshots, timestamp: nsEvent.timestamp) {
             logger.debug("Multi-finger tap recognized: \(String(describing: gesture), privacy: .public)")
             onGestureDetected?(gesture)
         }
+    }
+
+    /// NSTouch からスナップショットへ変換する。未知の phase は nil
+    @MainActor
+    private func snapshot(for touch: NSTouch) -> TouchSnapshot? {
+        guard let phase = TouchSnapshot.Phase(touch.phase) else { return nil }
+        return TouchSnapshot(
+            id: touchIDs.id(for: touch.identity),
+            phase: phase,
+            x: touch.normalizedPosition.x,
+            y: touch.normalizedPosition.y
+        )
     }
 
     deinit {
@@ -186,23 +216,51 @@ private extension PinchRecognizer.Phase {
     }
 }
 
-private extension TouchSnapshot {
-    /// NSTouch からスナップショットへ変換する。未知の phase は nil
-    init?(touch: NSTouch) {
-        let phase: TouchSnapshot.Phase
-        switch touch.phase {
-        case .began:      phase = .began
-        case .moved:      phase = .moved
-        case .stationary: phase = .stationary
-        case .ended:      phase = .ended
-        case .cancelled:  phase = .cancelled
+/// 接地中のタッチと、こちらで振ったIDの対応表。
+///
+/// `NSTouch.identity` はインスタンスの同一性も説明文字列の安定性・一意性も保証されておらず
+/// （Apple のドキュメントは `isEqual:` での比較を指示している）、文字列化したものを
+/// そのままキーにはできない。identity を保持して照合し、自前の連番IDを配る。
+@MainActor
+private final class TouchIDTable {
+    private var live: [(identity: any NSObjectProtocol, id: String)] = []
+    private var lastSerial = 0
+
+    nonisolated init() {}
+
+    /// 追跡中のタッチなら同じIDを返し、新しいタッチには連番IDを割り当てる
+    func id(for identity: any NSObjectProtocol) -> String {
+        if let known = live.first(where: { $0.identity.isEqual(identity) }) {
+            return known.id
+        }
+        lastSerial += 1
+        let id = "touch-\(lastSerial)"
+        live.append((identity, id))
+        return id
+    }
+
+    /// 離脱したタッチの対応を破棄する。identity が使い回されても前のIDを引き継がないよう、
+    /// ended/cancelled はスナップショット生成の直後に外す（イベントから消えた分も掃除する）。
+    func retire(after touches: Set<NSTouch>) {
+        live.removeAll { entry in
+            guard let touch = touches.first(where: { $0.identity.isEqual(entry.identity) }) else {
+                return true
+            }
+            return touch.phase.contains(.ended) || touch.phase.contains(.cancelled)
+        }
+    }
+}
+
+private extension TouchSnapshot.Phase {
+    /// NSTouch.Phase から写像する。未知の phase は nil
+    init?(_ phase: NSTouch.Phase) {
+        switch phase {
+        case .began:      self = .began
+        case .moved:      self = .moved
+        case .stationary: self = .stationary
+        case .ended:      self = .ended
+        case .cancelled:  self = .cancelled
         default:          return nil
         }
-        self.init(
-            id: String(describing: touch.identity),
-            phase: phase,
-            x: touch.normalizedPosition.x,
-            y: touch.normalizedPosition.y
-        )
     }
 }

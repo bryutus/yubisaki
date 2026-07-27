@@ -81,6 +81,10 @@ final class MultiFingerTapRecognizer {
             if tracked.count > 4 {
                 // 5本以上はタップではない
                 state = .invalid
+            } else if !newIDs.isEmpty && tracked.values.contains(where: { $0.hasEnded }) {
+                // 離脱済みの指がある状態での新規着地＝指のバウンド。離脱済みも本数に数えるため、
+                // そのまま続けると 2本指タップが3本指タップに化ける
+                state = .invalid
             } else if !newIDs.isEmpty && elapsed > Self.maxLandingSpread {
                 // 後着の指が遅すぎる（ホールドタップや順次着地）
                 state = .invalid

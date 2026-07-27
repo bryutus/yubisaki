@@ -2,9 +2,15 @@ import SwiftUI
 import AppKit
 import UniformTypeIdentifiers
 
-enum SettingsTab: String, CaseIterable {
-    case gestures = "ジェスチャー"
-    case general = "一般"
+enum SettingsTab {
+    case gestures, general
+
+    var title: String {
+        switch self {
+        case .gestures: return L("settings.tab.gestures")
+        case .general:  return L("settings.tab.general")
+        }
+    }
 }
 
 // Configures the Settings window to match the macOS System Settings / Xcode visual style.
@@ -116,7 +122,7 @@ struct SettingsView: View {
                 // Sit the title in the titlebar band so its vertical center lines up with the
                 // traffic-light buttons. The frame height matches the unified titlebar, and
                 // ignoring the top safe area lets it rise into that band.
-                Text(selectedTab.rawValue)
+                Text(selectedTab.title)
                     .font(.title3.weight(.semibold))
                     .padding(.horizontal, 20)
                     .frame(maxWidth: .infinity, minHeight: titlebarHeight, alignment: .leading)
@@ -134,14 +140,14 @@ struct SettingsView: View {
         List(selection: $selectedBundleID) {
             AppRowView(
                 bundleID: AppProfile.globalBundleID,
-                enabledCount: configStore.globalProfile.bindings.filter(\.enabled).count
+                usableCount: configStore.globalProfile.bindings.filter(\.isUsable).count
             )
             .tag(AppProfile.globalBundleID)
 
             ForEach(configStore.profiles) { profile in
                 AppRowView(
                     bundleID: profile.bundleID,
-                    enabledCount: profile.bindings.filter(\.enabled).count
+                    usableCount: profile.bindings.filter(\.isUsable).count
                 )
                 .tag(profile.bundleID)
             }
@@ -252,7 +258,8 @@ struct SettingsView: View {
 
 private struct AppRowView: View {
     let bundleID: String
-    let enabledCount: Int
+    /// 実際に発火し得るバインディングの数（有効かつショートカット設定済み）
+    let usableCount: Int
 
     var body: some View {
         HStack(spacing: 8) {
@@ -261,8 +268,8 @@ private struct AppRowView: View {
                 .font(.callout.weight(.medium))
                 .lineLimit(1)
             Spacer()
-            if enabledCount > 0 {
-                Text("\(enabledCount)")
+            if usableCount > 0 {
+                Text("\(usableCount)")
                     .font(.caption.weight(.medium))
                     .foregroundStyle(.secondary)
                     .monospacedDigit()

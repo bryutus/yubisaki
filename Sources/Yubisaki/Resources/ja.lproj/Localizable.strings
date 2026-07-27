@@ -12,21 +12,14 @@
 "gesture.fourTap"            = "タップ";
 
 /* Menu Bar */
-"menu.status.running" = "有効";
-"menu.status.paused"  = "一時停止中";
-"menu.pause"          = "一時停止";
-"menu.resume"         = "再開";
 "menu.settings"       = "設定…";
 "menu.quit"           = "yubisakiを終了";
 
 /* Settings Window */
-"settings.title"        = "設定";
 "settings.tab.gestures" = "ジェスチャー";
 "settings.tab.general"  = "一般";
 
 /* App Sidebar */
-"sidebar.section.system"       = "システム";
-"sidebar.section.applications" = "アプリケーション";
 "sidebar.allApps"              = "すべてのアプリ";
 "sidebar.addApp"               = "アプリを追加";
 "sidebar.removeApp"            = "アプリを削除";
@@ -37,7 +30,6 @@
 "gestures.gesturesEnabled"  = "ジェスチャーを有効";
 "gestures.column.gesture"   = "ジェスチャー";
 "gestures.column.shortcut"  = "ショートカット";
-"gestures.activeCount"      = "%d個の有効なバインディング";
 "gestures.selectApp"        = "左のリストからアプリを選択してください";
 "gestures.noBindings"       = "ジェスチャーバインディングがありません";
 "gestures.addBinding"       = "バインディングを追加";
@@ -47,7 +39,6 @@
 /* Shortcut Field */
 "shortcut.clickToRecord" = "クリックして記録";
 "shortcut.pressNewKey"   = "新しいキーを入力";
-"shortcut.recording"     = "録音中…";
 
 /* General Tab */
 "general.launchAtLogin"         = "ログイン時にyubisakiを起動";
@@ -65,6 +56,12 @@
 "general.openSystemSettings"    = "システム設定を開く…";
 "general.footer.reset"          = "リセット…";
 "general.reset.title"           = "設定をリセット";
-"general.reset.message"         = "ジェスチャー有効化・ログイン時起動・Dock表示の設定をデフォルトに戻します。";
+"general.reset.message"         = "ジェスチャー有効化・ショートカットの画面表示・ログイン時起動・Dock表示の設定をデフォルトに戻します。";
 "general.reset.confirm"         = "リセット";
 "general.reset.cancel"          = "キャンセル";
+
+/* Permission Alert */
+"permission.inputMonitoring.title"   = "入力監視の権限が必要です";
+"permission.inputMonitoring.message" = "システム設定 > プライバシーとセキュリティ > 入力監視 で yubisaki を許可してください。";
+"permission.openSystemSettings"      = "システム設定を開く";
+"permission.later"                   = "後で";

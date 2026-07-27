@@ -46,7 +46,7 @@ struct AppProfileTests {
     }
 
     @Test func keyCode未設定の重複はshadowed扱いにならずかつ先行として他をshadowしない() {
-        let unsetDuplicate = GestureBinding(gesture: .pinchIn, keyCode: 0, enabled: true)
+        let unsetDuplicate = GestureBinding(gesture: .pinchIn, keyCode: nil, enabled: true)
         let usable = GestureBinding(gesture: .pinchIn, keyCode: 2, enabled: true)
         let profile = AppProfile(bundleID: "com.example.app", bindings: [unsetDuplicate, usable])
         #expect(profile.shadowedBindingIDs.isEmpty)
