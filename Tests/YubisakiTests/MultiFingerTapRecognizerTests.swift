@@ -186,6 +186,63 @@ struct MultiFingerTapRecognizerTests {
         #expect(performSimultaneousTap(recognizer, fingerCount: 2, startingAt: 0) == nil)
     }
 
+    // MARK: - 指のバウンド（回帰）
+
+    @Test func 二本指タップ中のバウンドは三本指タップにならない() {
+        // 離脱済みの指も本数に数えるため、1本が跳ねて別IDで再着地すると
+        // 本数が1つ多く見えてしまっていた
+        let recognizer = MultiFingerTapRecognizer()
+        var result = recognizer.recognize(
+            touches: [touch("A", .began, x: 0.3), touch("B", .began, x: 0.5)], timestamp: 0)
+        #expect(result == nil)
+        // A が離脱（B は接地継続）
+        result = recognizer.recognize(
+            touches: [touch("A", .ended, x: 0.3), touch("B", .stationary, x: 0.5)], timestamp: 0.03)
+        #expect(result == nil)
+        // A が別IDで再着地（maxLandingSpread 以内）
+        result = recognizer.recognize(
+            touches: [touch("A2", .began, x: 0.3), touch("B", .stationary, x: 0.5)], timestamp: 0.06)
+        #expect(result == nil)
+        result = recognizer.recognize(
+            touches: [touch("A2", .ended, x: 0.3), touch("B", .ended, x: 0.5)], timestamp: 0.15)
+        #expect(result == nil)
+
+        // 全指離脱後は復帰し、正しい同時タップは発火する
+        #expect(performSimultaneousTap(recognizer, fingerCount: 3, startingAt: 1.0) == .threeTap)
+    }
+
+    @Test func 三本指タップ中のバウンドは四本指タップにならない() {
+        let recognizer = MultiFingerTapRecognizer()
+        var result = recognizer.recognize(
+            touches: (0..<3).map { touch("f\($0)", .began, x: x(forFinger: $0)) }, timestamp: 0)
+        #expect(result == nil)
+        result = recognizer.recognize(
+            touches: [
+                touch("f0", .ended, x: x(forFinger: 0)),
+                touch("f1", .stationary, x: x(forFinger: 1)),
+                touch("f2", .stationary, x: x(forFinger: 2)),
+            ],
+            timestamp: 0.03)
+        #expect(result == nil)
+        result = recognizer.recognize(
+            touches: [
+                touch("f0-again", .began, x: x(forFinger: 0)),
+                touch("f1", .stationary, x: x(forFinger: 1)),
+                touch("f2", .stationary, x: x(forFinger: 2)),
+            ],
+            timestamp: 0.06)
+        #expect(result == nil)
+        result = recognizer.recognize(
+            touches: [
+                touch("f0-again", .ended, x: x(forFinger: 0)),
+                touch("f1", .ended, x: x(forFinger: 1)),
+                touch("f2", .ended, x: x(forFinger: 2)),
+            ],
+            timestamp: 0.15)
+        // 本数を誤って fourTap にせず、バウンドとして棄却する
+        #expect(result == nil)
+    }
+
     @Test func 一本指タップは発火しない() {
         let recognizer = MultiFingerTapRecognizer()
         #expect(performSimultaneousTap(recognizer, fingerCount: 1, startingAt: 0) == nil)
