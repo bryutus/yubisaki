@@ -5,9 +5,10 @@ import Foundation
 // 選ばれてしまう。Locale.preferredLanguages で lproj を直接選ぶことで回避する。
 // Bundle 生成はアプリ起動中に変わらないためモジュールレベルでキャッシュする。
 private let _localizedBundle: Bundle = {
-    let lang = Locale.preferredLanguages.first.map { String($0.prefix(2)) } ?? "ja"
+    let lang = Locale.preferredLanguages.first.map { String($0.prefix(2)) } ?? "en"
+    // 同梱していない言語（ja/en 以外）は英語にフォールバックする
     let url = resourceBundle.url(forResource: lang, withExtension: "lproj")
-           ?? resourceBundle.url(forResource: "ja", withExtension: "lproj")
+           ?? resourceBundle.url(forResource: "en", withExtension: "lproj")
     return url.flatMap { Bundle(url: $0) } ?? resourceBundle
 }()
 

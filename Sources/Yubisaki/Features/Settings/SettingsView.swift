@@ -2,9 +2,15 @@ import SwiftUI
 import AppKit
 import UniformTypeIdentifiers
 
-enum SettingsTab: String, CaseIterable {
-    case gestures = "ジェスチャー"
-    case general = "一般"
+enum SettingsTab {
+    case gestures, general
+
+    var title: String {
+        switch self {
+        case .gestures: return L("settings.tab.gestures")
+        case .general:  return L("settings.tab.general")
+        }
+    }
 }
 
 // Configures the Settings window to match the macOS System Settings / Xcode visual style.
@@ -116,7 +122,7 @@ struct SettingsView: View {
                 // Sit the title in the titlebar band so its vertical center lines up with the
                 // traffic-light buttons. The frame height matches the unified titlebar, and
                 // ignoring the top safe area lets it rise into that band.
-                Text(selectedTab.rawValue)
+                Text(selectedTab.title)
                     .font(.title3.weight(.semibold))
                     .padding(.horizontal, 20)
                     .frame(maxWidth: .infinity, minHeight: titlebarHeight, alignment: .leading)
