@@ -1,10 +1,6 @@
 import SwiftUI
 import AppKit
 
-extension Notification.Name {
-    static let gesturesEnabledDidChange = Notification.Name("gesturesEnabledDidChange")
-}
-
 struct MenuBarContentView: View {
     private var configStore: ConfigStore = .shared
     @Environment(\.openSettings) private var openSettings
@@ -15,7 +11,6 @@ struct MenuBarContentView: View {
             set: {
                 configStore.preferences.gesturesEnabled = $0
                 configStore.savePreferences()
-                NotificationCenter.default.post(name: .gesturesEnabledDidChange, object: nil)
             }
         ))
 

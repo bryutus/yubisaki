@@ -81,9 +81,6 @@ struct GeneralSettingsView: View {
         }
         .onChange(of: configStore.preferences) { old, new in
             configStore.savePreferences()
-            if old.gesturesEnabled != new.gesturesEnabled {
-                NotificationCenter.default.post(name: .gesturesEnabledDidChange, object: nil)
-            }
             if old.launchAtLogin != new.launchAtLogin {
                 do {
                     if new.launchAtLogin {
@@ -109,7 +106,6 @@ struct GeneralSettingsView: View {
         configStore.preferences = defaults
         configStore.savePreferences()
         NSApp.setActivationPolicy(.accessory)
-        NotificationCenter.default.post(name: .gesturesEnabledDidChange, object: nil)
     }
 }
 

@@ -30,6 +30,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return snapshot.pinchBoundBundleIDs.contains(bundleID) || snapshot.globalHasPinchBinding
         }
         monitor.onGestureDetected = { [weak watcher] gesture in
+            // ピンチは消費判定（shouldHandleGesture）でも見ているが、タップ系は消費判定を
+            // 通らないため、全ジェスチャー共通の関門はここだけになる。
+            guard ConfigStore.shared.gestureSnapshot().gesturesEnabled else { return }
             guard let bundleID = watcher?.frontmostBundleID else { return }
             guard let binding = ConfigStore.shared.binding(for: bundleID, gesture: gesture),
                   let keyCode = binding.keyCode else { return }
