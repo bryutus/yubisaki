@@ -138,8 +138,7 @@ final class ConfigStore: @unchecked Sendable {
     }
 
     func binding(for bundleID: String, gesture: GestureType) -> GestureBinding? {
-        // keyCode == 0 は「ショートカット未設定」。発火させると virtualKey 0 = 'A' を送って
-        // しまうため、未設定のバインディングは一致対象から除外する。
+        // ショートカット未設定（keyCode == nil）のバインディングは送るキーが無いので一致対象から除外する。
         if let b = profiles.first(where: { $0.bundleID == bundleID && $0.enabled })?
             .bindings.first(where: { $0.gesture == gesture && $0.isUsable }) {
             return b

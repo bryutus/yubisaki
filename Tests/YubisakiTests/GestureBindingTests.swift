@@ -27,10 +27,18 @@ struct GestureBindingTests {
         #expect(binding.shortcutDescription == "⌃⌥⇧⌘Space")
     }
 
-    @Test func keyCodeが0のショートカットは未設定として空文字になる() {
+    @Test func ショートカット未設定なら空文字になる() {
+        let binding = GestureBinding(
+            gesture: .pinchIn, keyCode: nil, modifierFlags: CGEventFlags.maskCommand.rawValue)
+        #expect(binding.shortcutDescription == "")
+    }
+
+    @Test func keyCode0はAキーとして扱われる() {
+        // 0 は 'A' の仮想キーコード。未設定の表現に使っていた頃は ⌘A を割り当てられなかった
         let binding = GestureBinding(
             gesture: .pinchIn, keyCode: 0, modifierFlags: CGEventFlags.maskCommand.rawValue)
-        #expect(binding.shortcutDescription == "")
+        #expect(binding.shortcutDescription == "⌘A")
+        #expect(binding.isUsable)
     }
 
     // MARK: - keyCodeString
@@ -53,7 +61,7 @@ struct GestureBindingTests {
     }
 
     @Test func 有効でもショートカット未設定なら使用不可() {
-        let binding = GestureBinding(gesture: .pinchIn, keyCode: 0, enabled: true)
+        let binding = GestureBinding(gesture: .pinchIn, keyCode: nil, enabled: true)
         #expect(!binding.isUsable)
     }
 
@@ -63,7 +71,7 @@ struct GestureBindingTests {
     }
 
     @Test func 無効かつショートカット未設定なら使用不可() {
-        let binding = GestureBinding(gesture: .pinchIn, keyCode: 0, enabled: false)
+        let binding = GestureBinding(gesture: .pinchIn, keyCode: nil, enabled: false)
         #expect(!binding.isUsable)
     }
 
@@ -82,6 +90,33 @@ struct GestureBindingTests {
         #expect(decoded.enabled == true)
         // id は自動生成される（nilにならず、有効なUUID）
         _ = decoded.id
+    }
+
+    @Test func v1形式のkeyCode0は未設定として読み込まれる() throws {
+        // v1 では 0 が「ショートカット未設定」を意味していた
+        let json = """
+        {"gesture":{"pinchIn":{}},"keyCode":0,"modifierFlags":0}
+        """
+        let decoded = try JSONDecoder().decode(GestureBinding.self, from: Data(json.utf8))
+        #expect(decoded.keyCode == nil)
+        #expect(!decoded.isUsable)
+    }
+
+    @Test func v2形式のkey0はAキーとして読み込まれる() throws {
+        let json = """
+        {"gesture":{"pinchIn":{}},"key":0,"modifierFlags":0}
+        """
+        let decoded = try JSONDecoder().decode(GestureBinding.self, from: Data(json.utf8))
+        #expect(decoded.keyCode == 0)
+        #expect(decoded.isUsable)
+    }
+
+    @Test func ショートカット未設定のバインディングも往復する() throws {
+        let original = GestureBinding(gesture: .threeTap, keyCode: nil)
+        let data = try JSONEncoder().encode(original)
+        let decoded = try JSONDecoder().decode(GestureBinding.self, from: data)
+        #expect(decoded.keyCode == nil)
+        #expect(decoded.id == original.id)
     }
 
     @Test func encodeしてdecodeすると同じ内容に戻る() throws {

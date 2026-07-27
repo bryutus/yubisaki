@@ -31,9 +31,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         monitor.onGestureDetected = { [weak watcher] gesture in
             guard let bundleID = watcher?.frontmostBundleID else { return }
-            guard let binding = ConfigStore.shared.binding(for: bundleID, gesture: gesture) else { return }
-            logger.info("Sending \(String(describing: gesture), privacy: .public) → keyCode \(binding.keyCode) to \(bundleID, privacy: .public)")
-            KeySender.send(keyCode: binding.keyCode, flags: binding.eventFlags)
+            guard let binding = ConfigStore.shared.binding(for: bundleID, gesture: gesture),
+                  let keyCode = binding.keyCode else { return }
+            logger.info("Sending \(String(describing: gesture), privacy: .public) → keyCode \(keyCode) to \(bundleID, privacy: .public)")
+            KeySender.send(keyCode: keyCode, flags: binding.eventFlags)
             if ConfigStore.shared.preferences.hudEnabled {
                 HUDManager.shared.present(gesture: gesture, shortcutDescription: binding.shortcutDescription)
             }

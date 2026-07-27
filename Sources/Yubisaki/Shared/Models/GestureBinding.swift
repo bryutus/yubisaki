@@ -4,11 +4,12 @@ import Foundation
 struct GestureBinding: Codable, Sendable, Identifiable {
     var id: UUID
     var gesture: GestureType
-    var keyCode: CGKeyCode
+    /// 未設定は nil。0 は 'A' の正当な仮想キーコードなので、未設定の表現には使えない
+    var keyCode: CGKeyCode?
     var modifierFlags: UInt64
     var enabled: Bool
 
-    init(gesture: GestureType, keyCode: CGKeyCode = 0, modifierFlags: UInt64 = 0, enabled: Bool = true) {
+    init(gesture: GestureType, keyCode: CGKeyCode? = nil, modifierFlags: UInt64 = 0, enabled: Bool = true) {
         self.id = UUID()
         self.gesture = gesture
         self.keyCode = keyCode
@@ -18,11 +19,11 @@ struct GestureBinding: Codable, Sendable, Identifiable {
 
     var eventFlags: CGEventFlags { CGEventFlags(rawValue: modifierFlags) }
 
-    /// 有効かつショートカット設定済み（keyCode != 0）で、実際に発火し得るバインディングかどうか。
-    var isUsable: Bool { enabled && keyCode != 0 }
+    /// 有効かつショートカット設定済みで、実際に発火し得るバインディングかどうか。
+    var isUsable: Bool { enabled && keyCode != nil }
 
     var shortcutDescription: String {
-        guard keyCode != 0 else { return "" }
+        guard let keyCode else { return "" }
         var parts = eventFlags.modifierSymbols
         parts.append(Self.keyCodeString(keyCode))
         return parts.joined()
@@ -47,19 +48,41 @@ struct GestureBinding: Codable, Sendable, Identifiable {
         return table[code] ?? "(\(code))"
     }
 
-    // MARK: - Codable (migration from v1 format: no id/note/enabled)
+    // MARK: - Codable
+    //
+    // v1: id/enabled なし、キーは "keyCode" で 0 が「未設定」を意味していた。
+    // v2: キーを "key" に変え、未設定はキー自体を書かない（0 は 'A' として有効な値になる）。
+    // 旧キーで 0 が来た場合だけ未設定へ読み替えるため、キー名を分けて両方を読む。
 
     private enum CodingKeys: String, CodingKey {
-        case id, gesture, keyCode, modifierFlags, enabled
+        case id, gesture, modifierFlags, enabled
+        case key
+        case legacyKeyCode = "keyCode"
     }
 
     init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         id            = try c.decodeIfPresent(UUID.self,       forKey: .id)            ?? UUID()
         gesture       = try c.decode(GestureType.self,         forKey: .gesture)
-        keyCode       = try c.decode(CGKeyCode.self,           forKey: .keyCode)
         modifierFlags = try c.decode(UInt64.self,              forKey: .modifierFlags)
         enabled       = try c.decodeIfPresent(Bool.self,       forKey: .enabled)       ?? true
+
+        if let key = try c.decodeIfPresent(CGKeyCode.self, forKey: .key) {
+            keyCode = key
+        } else if let legacy = try c.decodeIfPresent(CGKeyCode.self, forKey: .legacyKeyCode) {
+            keyCode = legacy == 0 ? nil : legacy
+        } else {
+            keyCode = nil
+        }
+    }
+
+    func encode(to encoder: any Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(id,                     forKey: .id)
+        try c.encode(gesture,                forKey: .gesture)
+        try c.encodeIfPresent(keyCode,       forKey: .key)
+        try c.encode(modifierFlags,          forKey: .modifierFlags)
+        try c.encode(enabled,                forKey: .enabled)
     }
 }
 
