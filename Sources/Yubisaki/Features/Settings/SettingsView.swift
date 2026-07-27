@@ -140,14 +140,14 @@ struct SettingsView: View {
         List(selection: $selectedBundleID) {
             AppRowView(
                 bundleID: AppProfile.globalBundleID,
-                enabledCount: configStore.globalProfile.bindings.filter(\.enabled).count
+                usableCount: configStore.globalProfile.bindings.filter(\.isUsable).count
             )
             .tag(AppProfile.globalBundleID)
 
             ForEach(configStore.profiles) { profile in
                 AppRowView(
                     bundleID: profile.bundleID,
-                    enabledCount: profile.bindings.filter(\.enabled).count
+                    usableCount: profile.bindings.filter(\.isUsable).count
                 )
                 .tag(profile.bundleID)
             }
@@ -258,7 +258,8 @@ struct SettingsView: View {
 
 private struct AppRowView: View {
     let bundleID: String
-    let enabledCount: Int
+    /// 実際に発火し得るバインディングの数（有効かつショートカット設定済み）
+    let usableCount: Int
 
     var body: some View {
         HStack(spacing: 8) {
@@ -267,8 +268,8 @@ private struct AppRowView: View {
                 .font(.callout.weight(.medium))
                 .lineLimit(1)
             Spacer()
-            if enabledCount > 0 {
-                Text("\(enabledCount)")
+            if usableCount > 0 {
+                Text("\(usableCount)")
                     .font(.caption.weight(.medium))
                     .foregroundStyle(.secondary)
                     .monospacedDigit()

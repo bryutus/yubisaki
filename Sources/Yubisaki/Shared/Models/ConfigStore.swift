@@ -112,6 +112,7 @@ final class ConfigStore: @unchecked Sendable {
     // 変更箇所だけ書き込めるよう、粒度別の保存も公開する。いずれもスナップショットを更新する。
     func savePreferences() {
         refreshGestureSnapshot()
+        ensureBaseDirectory()
         do {
             let data = try JSONEncoder().encode(preferences)
             try data.write(to: preferencesURL, options: .atomic)
